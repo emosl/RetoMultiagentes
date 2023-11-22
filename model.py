@@ -70,18 +70,19 @@ class CityModel(Model):
                         agent = Destination(f"d_{r*self.width+c}", self)
                         self.grid.place_agent(agent, (c, self.height - r - 1))
                         self.D_locations.append((c, self.height - r - 1))
-
+        
+        print("DESTINATION NODES: ", self.D_locations)
         i = 0 
-        # if self.I_locations:
-        #     random_I_location = random.choice(self.I_locations)
-        #     random_D_location = random.choice(self.D_locations)
-        #     car_agent = Car(1000 + i, self, random_D_location)  
-        #     self.grid.place_agent(car_agent, random_I_location)
-        #     self.schedule.add(car_agent)
-        car_agent = Car(1000 + i, self, (3,19))  
-        self.grid.place_agent(car_agent, (0, 0))
-        self.schedule.add(car_agent)
-        #print("car starts from", random_I_location, "destination is ", random_D_location)
+        if self.I_locations:
+            random_I_location = random.choice(self.I_locations)
+            random_D_location = random.choice(self.D_locations)
+            car_agent = Car(1000 + i, self, random_D_location)  
+            self.grid.place_agent(car_agent, random_I_location)
+            self.schedule.add(car_agent)
+        # car_agent = Car(1000 + i, self, (3,19))  
+        # self.grid.place_agent(car_agent, (0, 0))
+        # self.schedule.add(car_agent)
+            print("car starts from", random_I_location, "destination is ", random_D_location)
             
 
         self.num_agents = N

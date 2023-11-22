@@ -1,6 +1,7 @@
 from mesa import Agent
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Car(Agent):
     """
@@ -14,6 +15,14 @@ class Car(Agent):
         super().__init__(unique_id, model)
         self.destination_pos = destination_pos  # The destination position for the car  
         self.path = None  # This will store the path the car needs to follow
+        # G = self.create_graph()
+
+        # self.plot_graph(G)
+
+    def plot_graph(self, graph):
+        pos = {node: (node[0], -node[1]) for node in graph.nodes}  # Flip y-axis for visualization
+        nx.draw(graph, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=8, font_color='black')
+        plt.show()
 
     def determine_node_type(self, cell_contents):
         node_type = ' '  # Default node type (empty or non-blocking)
@@ -51,8 +60,7 @@ class Car(Agent):
 
         G = nx.DiGraph()
         rows, cols = grid.height, grid.width
-        print("WIDTH: ", grid.width)
-        print("create graph")
+
 
         for y in range(rows):
             for x in range(cols):
@@ -63,32 +71,38 @@ class Car(Agent):
 
                 if node == '>':
                     # Right to s, D, >, I
-                    if x + 1 <= cols:
+                    if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
-                        if right_node in ['s', 'D', '>', 'I']:
+                        if right_node in ['s', 'D', '>', 'I','^' ]:
                             G.add_edge((x, y), (x + 1, y))
 
                     # Up to ^, D
-                    if y + 1 <= rows:
+                    if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', 'D']:
+                            G.add_edge((x, y), (x, y + 1))
+
+                    if y - 1 > 0:
+                        up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
+                        up_node = self.determine_node_type(up_cell_contents)
+                        if up_node in ['v', 'D', "I"]:
                             G.add_edge((x, y), (x, y - 1))
 
                     # Up-right to >
-                    if y - 1 >= rows and x + 1 <= cols:
+                    if y - 1 >= 0 and x + 1 < cols:
                         up_right_cell_contents = grid.get_cell_list_contents([(x + 1, y - 1)])
                         up_right_node = self.determine_node_type(up_right_cell_contents)
                         if up_right_node == '>':
                             G.add_edge((x, y), (x + 1, y - 1))
 
                     # Up-left to >
-                    if y + 1 <= rows and x + 1 <= cols:
+                    if y + 1 < rows and x + 1 < cols:
                         up_left_cell_contents = grid.get_cell_list_contents([(x + 1, y + 1)])
                         up_left_node = self.determine_node_type(up_left_cell_contents)
                         if up_left_node == '>':
-                            G.add_edge((x, y), (x - 1, y - 1))
+                            G.add_edge((x, y), (x + 1, y + 1))
 
                     
                     
@@ -96,10 +110,10 @@ class Car(Agent):
                 # Check for '<'
                 if node == '<':
                     # Left to s, D, <, I
-                    if x - 1 >= cols:
+                    if x - 1 >= 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
-                        if left_node in ['s', 'D', '<', 'I']:
+                        if left_node in ['s', 'D', '<', 'I', "v"]:
                             G.add_edge((x, y), (x - 1, y))
 
                     # Up to ^, D
@@ -107,34 +121,40 @@ class Car(Agent):
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', 'D']:
+                            G.add_edge((x, y), (x, y + 1))
+                    
+                    if y - 1 > 0:
+                        up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
+                        up_node = self.determine_node_type(up_cell_contents)
+                        if up_node in ['v', 'D']:
                             G.add_edge((x, y), (x, y - 1))
 
                     # Down-left to <
-                    if y + 1 < rows and x + 1 < cols:
-                        down_left_cell_contents = grid.get_cell_list_contents([(x + 1, y + 1)])
+                    if y + 1 < rows and x - 1 > 0:
+                        down_left_cell_contents = grid.get_cell_list_contents([(x - 1, y + 1)])
                         down_left_node = self.determine_node_type(down_left_cell_contents)
                         if down_left_node == '<':
                             G.add_edge((x, y), (x - 1, y + 1))
 
                     # Down-right to <
-                    if y - 1 >= rows and x - 1 >= cols:
+                    if y - 1 > 0 and x - 1 > 0:
                         down_right_cell_contents = grid.get_cell_list_contents([(x - 1, y - 1)])
                         down_right_node = self.determine_node_type(down_right_cell_contents)
                         if down_right_node == '<':
-                            G.add_edge((x, y), (x + 1, y + 1))
+                            G.add_edge((x, y), (x - 1, y - 1))
 
 
                 # Check for '^'
                 if node == '^':
                     # Up to ^, D, I, S
-                    if y + 1 <= rows:
+                    if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
-                        if up_node in ['^', 'D', 'I', 'S']:
-                            G.add_edge((x, y), (x, y - 1))
+                        if up_node in ['^', 'D', 'I', 'S', "<", ">"]:
+                            G.add_edge((x, y), (x, y + 1))
 
                     # Left to D, <, I
-                    if x - 1 >= cols:
+                    if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in ['D', '<', 'I']:
@@ -148,14 +168,14 @@ class Car(Agent):
                             G.add_edge((x, y), (x + 1, y))
 
                     # Up-left to ^
-                    if y + 1  <= rows and x + 1 < cols:
+                    if y + 1  < rows and x + 1 < cols:
                         up_left_cell_contents = grid.get_cell_list_contents([(x + 1, y + 1)])
                         up_left_node = self.determine_node_type(up_left_cell_contents)
                         if up_left_node == '^':
-                            G.add_edge((x, y), (x - 1, y - 1))
+                            G.add_edge((x, y), (x + 1, y + 1))
 
                     # Down-left to ^
-                    if y + 1 <= rows and x - 1 >= cols:
+                    if y + 1 < rows and x - 1 > 0:
                         down_left_cell_contents = grid.get_cell_list_contents([(x - 1, y + 1)])
                         down_left_node = self.determine_node_type(down_left_cell_contents)
                         if down_left_node == '^':
@@ -165,57 +185,69 @@ class Car(Agent):
 
                 if node == 'v':
                     # Down to v, D, I, S
-                    if y - 1 >= rows:
+                    if y - 1 > 0:
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
-                        if down_node in ['v', 'D', 'I', 'S']:
-                            G.add_edge((x, y), (x, y + 1))
+                        if down_node in ['v', 'D', 'I', 'S', ">", "<"]:
+                            G.add_edge((x, y), (x, y - 1))
 
                     # Right to >, I, D
-                    if x + 1 <= cols:
+                    if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node in ['>', 'I', 'D']:
                             G.add_edge((x, y), (x + 1, y))
 
                     # Left to <, I, D
-                    if x - 1 >= cols:
+                    if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in ['<', 'I', 'D']:
                             G.add_edge((x, y), (x - 1, y))
+                    
+                    if y - 1 > 0 and x - 1 >= 0:
+                        left_cell_contents = grid.get_cell_list_contents([(x - 1, y-1)])
+                        left_node = self.determine_node_type(left_cell_contents)
+                        if left_node == 'v':
+                            G.add_edge((x, y), (x - 1, y-1))
+
+                    if y - 1 > 0 and x + 1 < cols:
+                        left_cell_contents = grid.get_cell_list_contents([(x + 1, y-1)])
+                        left_node = self.determine_node_type(left_cell_contents)
+                        if left_node == 'v':
+                            G.add_edge((x, y), (x + 1, y-1))
 
 
                 # Check for 'S'
                 if node == 'S':
                     # Down to v
-                    if y - 1 >= rows:
+                    if y - 1 > 0:
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
-                        if down_node == 'v':
-                            G.add_edge((x, y), (x, y + 1))
+                        if down_node in ['v', ">"]:
+                            G.add_edge((x, y), (x, y - 1))
 
                     # Up to ^
-                    if y + 1 <= rows:
+                    if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
-                        if up_node == '^':
-                            G.add_edge((x, y), (x, y - 1))
+                        if up_node in ['^', "<"]:
+                            G.add_edge((x, y), (x, y + 1))
 
                 # Check for 's'
                 if node == 's':
                     # Right to >
-                    if x + 1 <= cols:
+                    if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
-                        if right_node == '>':
+                        if right_node in ['>', '^', "v"]:
                             G.add_edge((x, y), (x + 1, y))
 
                     # Left to <
-                    if x - 1 >= cols:
+                    if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
-                        if left_node == '<':
+                        if left_node in  ['<', '^', "v"]:
                             G.add_edge((x, y), (x - 1, y))
 
                 # Check for 'I'
@@ -225,17 +257,17 @@ class Car(Agent):
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node == '^':
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y + 1))
 
                     # Down to v
-                    if y - 1 <= rows:
+                    if y - 1 > 0:
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
                         if down_node == 'v':
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y - 1))
 
                     # Left to <
-                    if x - 1 >= cols:
+                    if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node == '<':
@@ -249,153 +281,6 @@ class Car(Agent):
                             G.add_edge((x, y), (x + 1, y))
 
         return G
-    
-    # def create_graph(self):
-    #     grid = self.model.grid
-
-    #     G = nx.DiGraph()
-    #     rows, cols = grid.height, grid.width
-    #     print("WIDTH: ", grid.width)
-    #     print("create graph")
-
-    #     for y in range(rows):
-    #         for x in range(cols):
-                
-    #             cell_contents = grid.get_cell_list_contents([(x, y)])
-    #             node = self.determine_node_type(cell_contents)
-                
-
-    #             if node == '#':
-    #                 continue
-    #             # print(f"Node at ({x}, {y}): {node}")
-
-    #             # Check for '>'
-    #             if node == '>':
-    #                 # Right to s, D, >, I
-    #                 if x + 1 < cols:
-    #                     right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
-    #                     right_node = self.determine_node_type(right_cell_contents)
-    #                     if right_node in ['s', 'D', '>', 'I']:
-    #                         G.add_edge((x, y), (x + 1, y))
-
-    #                 # Up to ^, D
-    #                 if y - 1 >= 0:
-    #                     up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
-    #                     up_node = self.determine_node_type(up_cell_contents)
-    #                     if up_node in ['^', 'D']:
-    #                         G.add_edge((x, y), (x, y - 1))
-
-    #             # Check for '<'
-    #             if node == '<':
-    #                 # Left to s, D, <, I
-    #                 if x - 1 >= 0:
-    #                     left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
-    #                     left_node = self.determine_node_type(left_cell_contents)
-    #                     if left_node in ['s', 'D', '<', 'I']:
-    #                         G.add_edge((x, y), (x - 1, y))
-
-    #                 # Up to ^, D
-    #                 if y - 1 >= 0:
-    #                     up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
-    #                     up_node = self.determine_node_type(up_cell_contents)
-    #                     if up_node in ['^', 'D']:
-    #                         G.add_edge((x, y), (x, y - 1))
-
-    #             # Check for '^'
-    #             if node == '^':
-    #                 # Up to ^, D, I, S
-    #                 if y - 1 >= 0:
-    #                     up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
-    #                     up_node = self.determine_node_type(up_cell_contents)
-    #                     if up_node in ['^', 'D', 'I', 'S']:
-    #                         G.add_edge((x, y), (x, y - 1))
-
-    #                 # Left to D, <, I
-    #                 if x - 1 >= 0:
-    #                     left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
-    #                     left_node = self.determine_node_type(left_cell_contents)
-    #                     if left_node in ['D', '<', 'I']:
-    #                         G.add_edge((x, y), (x - 1, y))
-
-    #             # Check for 'v'
-    #             if node == 'v':
-    #                 # Down to v, D, I, S
-    #                 if y + 1 < rows:
-    #                     down_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
-    #                     down_node = self.determine_node_type(down_cell_contents)
-    #                     if down_node in ['v', 'D', 'I', 'S']:
-    #                         G.add_edge((x, y), (x, y + 1))
-
-    #                 # Right to >, I, D
-    #                 if x + 1 < cols:
-    #                     right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
-    #                     right_node = self.determine_node_type(right_cell_contents)
-    #                     if right_node in ['>', 'I', 'D']:
-    #                         G.add_edge((x, y), (x + 1, y))
-
-    #             # Check for 'S'
-    #             if node == 'S':
-    #                 # Down to v
-    #                 if y + 1 < rows:
-    #                     down_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
-    #                     down_node = self.determine_node_type(down_cell_contents)
-    #                     if down_node == 'v':
-    #                         G.add_edge((x, y), (x, y + 1))
-
-    #                 # Up to ^
-    #                 if y - 1 >= 0:
-    #                     up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
-    #                     up_node = self.determine_node_type(up_cell_contents)
-    #                     if up_node == '^':
-    #                         G.add_edge((x, y), (x, y - 1))
-
-    #             # Check for 's'
-    #             if node == 's':
-    #                 # Right to >
-    #                 if x + 1 < cols:
-    #                     right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
-    #                     right_node = self.determine_node_type(right_cell_contents)
-    #                     if right_node == '>':
-    #                         G.add_edge((x, y), (x + 1, y))
-
-    #                 # Left to <
-    #                 if x - 1 >= 0:
-    #                     left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
-    #                     left_node = self.determine_node_type(left_cell_contents)
-    #                     if left_node == '<':
-    #                         G.add_edge((x, y), (x - 1, y))
-
-    #             # Check for 'I'
-    #             if node == 'I':
-    #                 # Up to ^
-    #                 if y - 1 >= 0:
-    #                     up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
-    #                     up_node = self.determine_node_type(up_cell_contents)
-    #                     if up_node == '^':
-    #                         G.add_edge((x, y), (x, y - 1))
-
-    #                 # Down to v
-    #                 if y + 1 < rows:
-    #                     down_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
-    #                     down_node = self.determine_node_type(down_cell_contents)
-    #                     if down_node == 'v':
-    #                         G.add_edge((x, y), (x, y + 1))
-
-    #                 # Left to <
-    #                 if x - 1 >= 0:
-    #                     left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
-    #                     left_node = self.determine_node_type(left_cell_contents)
-    #                     if left_node == '<':
-    #                         G.add_edge((x, y), (x - 1, y))
-
-    #                 # Right to >
-    #                 if x + 1 < cols:
-    #                     right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
-    #                     right_node = self.determine_node_type(right_cell_contents)
-    #                     if right_node == '>':
-    #                         G.add_edge((x, y), (x + 1, y))
-
-    #     return G
     
 
 
@@ -416,6 +301,7 @@ class Car(Agent):
 
         try:
             path = nx.astar_path(G, start, end, heuristic=self.heuristic)
+            print(path)
             return path
         except nx.NetworkXNoPath:
             print("No path found in the graph.")
@@ -432,11 +318,9 @@ class Car(Agent):
         Moves the car along the path determined by A*.
         """
         if self.path is None or len(self.path) == 0:
-            # Find the path if not already found or if we have reached the previous target
             self.path = self.find_path(self.pos, self.destination_pos)
 
         if self.path is not None and len(self.path) > 0:
-            # Move to the next position in the path
             next_position = self.path.pop(0)
             self.model.grid.move_agent(self, next_position)
 
@@ -444,7 +328,6 @@ class Car(Agent):
         """
         Determines the new path using A* and moves along it.
         """
-        # self.move()
         
         G = self.create_graph()
 
@@ -452,6 +335,9 @@ class Car(Agent):
         for edge in G.edges():
             source, target = edge
             print(f"Node {source} directed to Node {target}")
+        
+        
+        self.move()
 
 class Traffic_Light(Agent):
     """
