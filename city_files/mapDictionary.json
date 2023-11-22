@@ -7,5 +7,5 @@
     "v" : "Down",
     "^" : "Up",
     "D" : "Destination",
-    "I" : "Initial"
+    "I" : "Initialization"
 }
