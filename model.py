@@ -52,12 +52,12 @@ class CityModel(Model):
                     #     self.traffic_lights.append(agent)
 
                     elif col == "S":
-                        agent = Traffic_Light(f"tl_S{r*self.width+c}", self, False, int(dataDictionary[col]))
+                        agent = Traffic_Light(f"tl_S{r*self.width+c}", self, False, int(dataDictionary[col]), "S")
                         self.grid.place_agent(agent, (c, self.height - r - 1))
                         self.schedule.add(agent)
                         self.traffic_lights.append(agent)
                     elif col == "s":
-                        agent = Traffic_Light(f"tl_s{r*self.width+c}", self, True, int(dataDictionary[col]))
+                        agent = Traffic_Light(f"tl_s{r*self.width+c}", self, True, int(dataDictionary[col]), "s")
                         self.grid.place_agent(agent, (c, self.height - r - 1))
                         self.schedule.add(agent)
                         self.traffic_lights.append(agent)
@@ -71,23 +71,27 @@ class CityModel(Model):
                         self.grid.place_agent(agent, (c, self.height - r - 1))
                         self.D_locations.append((c, self.height - r - 1))
         
-        print("DESTINATION NODES: ", self.D_locations)
-        i = 0 
-        if self.I_locations:
+        
+        self.num_agents = 0
+        self.running = True
+        self.step_count = 0
+        self.initialize_car()
+
+    def initialize_car(self):
+        if self.I_locations and self.D_locations:
             random_I_location = random.choice(self.I_locations)
             random_D_location = random.choice(self.D_locations)
-            car_agent = Car(1000 + i, self, random_D_location)  
+            car_agent = Car(1000 + self.num_agents, self, random_D_location)  
             self.grid.place_agent(car_agent, random_I_location)
             self.schedule.add(car_agent)
-        # car_agent = Car(1000 + i, self, (3,19))  
-        # self.grid.place_agent(car_agent, (0, 0))
-        # self.schedule.add(car_agent)
-            print("car starts from", random_I_location, "destination is ", random_D_location)
-            
-
-        self.num_agents = N
-        self.running = True
+            self.num_agents += 1
+            print("NUMBER OF AGENTS", self.num_agents)
 
     def step(self):
         '''Advance the model by one step.'''
         self.schedule.step()
+        self.step_count += 1  
+        # self.initialize_car()
+
+        if self.step_count % 10 == 0:
+            self.initialize_car()
