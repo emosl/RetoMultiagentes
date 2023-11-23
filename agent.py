@@ -310,7 +310,27 @@ class Car(Agent):
     def heuristic(self, a, b):
         # Simple Euclidean distance
         return ((a[0] - b[0])**2 + (a[1] - b[1])**2)**0.5
+    
+    def can_move_to(self, next_position):
+        """
+        Checks if the car can move to the next position. Returns True if it can, False otherwise.
+        """
+        cell_contents = self.model.grid.get_cell_list_contents(next_position)
+        for agent in cell_contents:
+            if isinstance(agent, Traffic_Light) and not agent.state:
+                return False  # Cannot move if there's a red traffic light
+            
+            if isinstance(agent, Car) and agent is not self:
+                print(f"Car {self.unique_id} at {self.pos}: Encountered another Car at {next_position}")
+                return False
 
+        return True
+
+    
+    def arrived_at_destination(self):
+        if self.pos == self.destination_pos:
+            self.model.grid.remove_agent(self)
+            self.model.schedule.remove(self)
 
 
     def move(self):
@@ -320,30 +340,37 @@ class Car(Agent):
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
 
-        if self.path is not None and len(self.path) > 0:
-            next_position = self.path.pop(0)
-            self.model.grid.move_agent(self, next_position)
+        if self.path and len(self.path) > 0:
+            next_position = self.path[0]  # Get the next position
+            if self.can_move_to(next_position):
+                self.path.pop(0)  # Remove the next position from the path
+                self.model.grid.move_agent(self, next_position)
 
     def step(self):
         """
         Determines the new path using A* and moves along it.
         """
         
-        G = self.create_graph()
+        # G = self.create_graph()
 
-        # Print the directed edges
-        for edge in G.edges():
-            source, target = edge
-            print(f"Node {source} directed to Node {target}")
+        # # Print the directed edges
+        # for edge in G.edges():
+        #     source, target = edge
+        #     print(f"Node {source} directed to Node {target}")
         
         
-        self.move()
+        
+        if self.pos == self.destination_pos:
+            self.arrived_at_destination()
+        else:
+            self.move()
+
 
 class Traffic_Light(Agent):
     """
     Traffic light. Where the traffic lights are in the grid.
     """
-    def __init__(self, unique_id, model, state = False, timeToChange = 10):
+    def __init__(self, unique_id, model, state = False, timeToChange = 10, light_type = "S"):
         super().__init__(unique_id, model)
         """
         Creates a new Traffic light.
@@ -354,14 +381,29 @@ class Traffic_Light(Agent):
             timeToChange: After how many step should the traffic light change color 
         """
         self.state = state
+        self.light_type = light_type
         self.timeToChange = timeToChange
+        self.traffic_light_states = {'S': False, 's': True}
+
+    def toggle_traffic_lights(self, light_type):
+        # Toggle the state of the specified light type
+        previous_state = self.traffic_light_states[light_type]
+        if light_type == 'S':
+            self.traffic_light_states['S'] = not self.traffic_light_states['S']
+            self.traffic_light_states['s'] = not self.traffic_light_states['S']
+        elif light_type == 's':
+            self.traffic_light_states['s'] = not self.traffic_light_states['s']
+            self.traffic_light_states['S'] = not self.traffic_light_states['s']
+
+        # print(f"Traffic Light '{light_type}' state changed from {previous_state} to {self.traffic_light_states[light_type]}")
+        # print(f"Current States - S: {self.traffic_light_states['S']}, s: {self.traffic_light_states['s']}")
+        
 
     def step(self):
-        """ 
-        To change the state (green or red) of the traffic light in case you consider the time to change of each traffic light.
-        """
         if self.model.schedule.steps % self.timeToChange == 0:
-            self.state = not self.state
+            # Toggle the state of this type of light
+            self.toggle_traffic_lights(self.light_type)
+            self.state = self.traffic_light_states[self.light_type]
 
 class Destination(Agent):
     """
