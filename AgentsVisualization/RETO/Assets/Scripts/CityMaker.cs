@@ -29,8 +29,8 @@ public class CityMaker : MonoBehaviour
         // To draw from the top, find the rows of the file
         // and move down
         // Remove the last enter, and one more to start at 0
-        int y = tiles.Split('\n').Length - 2;
-        Debug.Log(y);
+        int y = tiles.Split('\n').Length -2;
+        Debug.Log($"Starting y: {y}");
 
         Vector3 position;
         GameObject tile;
@@ -66,6 +66,16 @@ public class CityMaker : MonoBehaviour
                 tile.GetComponent<Renderer>().materials[0].color = Color.red;
                 tile.transform.parent = transform;
                 x += 1;
+            } else if (tiles[i] == 'I') {
+            // New condition for handling 'I'
+            position = new Vector3(x * tileSize, 0, y * tileSize);
+            tile = Instantiate(roadPrefab, position, Quaternion.identity);
+            tile.transform.parent = transform;
+
+            // Debug log for the 'I' building
+            Debug.Log($"Building ('I') created at x: {x}, y: {y}, position: {position}");
+
+            x += 1; 
             } else if (tiles[i] == '#') {
                 position = new Vector3(x * tileSize, 0, y * tileSize);
                 tile = Instantiate(buildingPrefab, position, Quaternion.identity);
