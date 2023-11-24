@@ -23,6 +23,9 @@ public class AgentData
     */
     public string id;
     public float x, y, z;
+    public bool hasArrived;
+    
+
 
     public AgentData(string id, float x, float y, float z)
     {
@@ -30,6 +33,7 @@ public class AgentData
         this.x = x;
         this.y = y;
         this.z = z;
+        // this.arrivedAtDestination = arrivedAtDestination;
     }
 }
 
@@ -44,6 +48,7 @@ public class AgentsData
         positions (list): A list of AgentData objects.
     */
     public List<AgentData> positions;
+    List<string> activeAgentIds = new List<string>();
 
     public AgentsData() => this.positions = new List<AgentData>();
 }
@@ -78,38 +83,43 @@ public class AgentController : MonoBehaviour
     */
     string serverUrl = "http://localhost:8585";
     string getAgentsEndpoint = "/getAgents";
-    string getObstaclesEndpoint = "/getObstacles";
+    string getTrafficLightEndpoint = "/getTrafficLights";
     string sendConfigEndpoint = "/init";
     string updateEndpoint = "/update";
-    AgentsData agentsData, obstacleData;
+    AgentsData agentsData, trafficLights;
     Dictionary<string, GameObject> agents;
     Dictionary<string, Vector3> prevPositions, currPositions;
 
     bool updated = false, started = false;
 
-    public GameObject agentPrefab, obstaclePrefab, floor;
-    public int NAgents, width, height;
-    public float timeToUpdate = 5.0f;
+    public GameObject agentPrefab, trafficLightsPrefab;
+    // public int NAgents, width, height;
+    public float timeToUpdate = 1.0f;
     private float timer, dt;
+    private int NAgents = 0;
+
 
     void Start()
     {
         agentsData = new AgentsData();
-        obstacleData = new AgentsData();
+        trafficLights = new AgentsData();
 
         prevPositions = new Dictionary<string, Vector3>();
         currPositions = new Dictionary<string, Vector3>();
 
         agents = new Dictionary<string, GameObject>();
 
-        floor.transform.localScale = new Vector3((float)width/10, 1, (float)height/10);
-        floor.transform.localPosition = new Vector3((float)width/2-0.5f, 0, (float)height/2-0.5f);
+        // floor.transform.localScale = new Vector3((float)width/10, 1, (float)height/10);
+        // floor.transform.localPosition = new Vector3((float)width/2-0.5f, 0, (float)height/2-0.5f);
         
         timer = timeToUpdate;
 
         // Launches a couroutine to send the configuration to the server.
         StartCoroutine(SendConfiguration());
+        Debug.Log("Starting AgentController and sending configuration to server.");
     }
+
+
 
     private void Update() 
     {
@@ -127,8 +137,11 @@ public class AgentController : MonoBehaviour
 
             // Iterates over the agents to update their positions.
             // The positions are interpolated between the previous and current positions.
+            RemoveArrivedAgents();
             foreach(var agent in currPositions)
             {
+                if (!agents.ContainsKey(agent.Key))
+                    continue;
                 Vector3 currentPosition = agent.Value;
                 Vector3 previousPosition = prevPositions[agent.Key];
 
@@ -137,6 +150,13 @@ public class AgentController : MonoBehaviour
 
                 agents[agent.Key].transform.localPosition = interpolated;
                 if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                // // Debug.Log($"Agent {agent.Key} updated position: {interpolated}");
+                // if (agentObj != null) 
+                // {
+                //     agentObj.transform.localPosition = interpolated;
+                //     if(direction != Vector3.zero) 
+                //         agentObj.transform.rotation = Quaternion.LookRotation(direction);
+                // }
             }
 
             // float t = (timer / timeToUpdate);
@@ -165,10 +185,10 @@ public class AgentController : MonoBehaviour
         It uses a WWWForm to send the data to the server, and then it uses a UnityWebRequest to send the form.
         */
         WWWForm form = new WWWForm();
-
+        Debug.Log("Sending NAgents: " + NAgents);
         form.AddField("NAgents", NAgents.ToString());
-        form.AddField("width", width.ToString());
-        form.AddField("height", height.ToString());
+        // form.AddField("width", width.ToString());
+        // form.AddField("height", height.ToString());
 
         UnityWebRequest www = UnityWebRequest.Post(serverUrl + sendConfigEndpoint, form);
         www.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -186,65 +206,159 @@ public class AgentController : MonoBehaviour
 
             // Once the configuration has been sent, it launches a coroutine to get the agents data.
             StartCoroutine(GetAgentsData());
-            StartCoroutine(GetObstacleData());
+            StartCoroutine(GetTrafficLightsData());
         }
     }
 
-    IEnumerator GetAgentsData() 
-    {
-        // The GetAgentsData method is used to get the agents data from the server.
+IEnumerator GetAgentsData() 
+{
+    UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
+    yield return www.SendWebRequest();
 
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
+    if (www.result != UnityWebRequest.Result.Success)
+    {
+        Debug.Log(www.error);
+    }
+    else 
+    {
+        
+        agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+        string jsonResponse = www.downloadHandler.text;
+        Debug.Log("Received raw response: " + jsonResponse);
+        Debug.Log("Received agents data. Total agents: " + agentsData.positions.Count);
+        
+
+        // foreach(AgentData agent in agentsData.positions)
+        // {
+        //     Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+
+        //     // Update existing agent or initialize new agent
+        //     if (agent.hasArrived && prevPositions.ContainsKey(agent.id))
+                
+        //     {
+        //         Debug.Log($"Removing agent with ID: {agent.id}");
+        //         Destroy(agents[agent.id]);
+        //         agents.Remove(agent.id);
+        //         prevPositions.Remove(agent.id);
+        //         currPositions.Remove(agent.id);
+        //     }
+            
+        //     else
+        //     {
+        //         if (prevPositions.ContainsKey(agent.id))
+        //         {
+        //             Vector3 currentPosition;
+        //             if (currPositions.TryGetValue(agent.id, out currentPosition))
+        //             {
+        //                 prevPositions[agent.id] = currentPosition;
+        //             }
+        //             currPositions[agent.id] = newAgentPosition;
+        //         }
+        //         else
+        //         {
+        //             // Instantiate new agent
+        //             prevPositions[agent.id] = newAgentPosition;
+        //             agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
+        //             Debug.Log($"Agent initialized: ID = {agent.id}, Position = {newAgentPosition}");
+        //         }
+        //     }
+            
+        // }
+        foreach(AgentData agent in agentsData.positions)
+    {
+        Debug.Log($"Agent ID: {agent.id}, Position: ({agent.x}, {agent.y}, {agent.z}), HasArrived: {agent.hasArrived}");
+        if (agent.hasArrived) continue;  // Skip processing for agents that have arrived
+
+        Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+
+        // Update existing agent or initialize new agent
+        if (prevPositions.ContainsKey(agent.id))
+        {
+            Vector3 currentPosition;
+            if (currPositions.TryGetValue(agent.id, out currentPosition))
+            {
+                prevPositions[agent.id] = currentPosition;
+            }
+            currPositions[agent.id] = newAgentPosition;
+        }
+        else
+        {
+            // Instantiate new agent
+            prevPositions[agent.id] = newAgentPosition;
+            agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
+            Debug.Log($"Agent initialized: ID = {agent.id}, Position = {newAgentPosition}");
+        }
+    }
+
+
+        updated = true;
+        if(!started) started = true;
+    }
+}
+
+
+
+    IEnumerator GetTrafficLightsData() 
+    {
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getTrafficLightEndpoint);
         yield return www.SendWebRequest();
  
         if (www.result != UnityWebRequest.Result.Success)
             Debug.Log(www.error);
         else 
         {
-            // Once the data has been received, it is stored in the agentsData variable.
-            // Then, it iterates over the agentsData.positions list to update the agents positions.
-            agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            trafficLights = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
 
-            foreach(AgentData agent in agentsData.positions)
+            Debug.Log(trafficLights.positions);
+
+            foreach(AgentData trafficLight in trafficLights.positions)
             {
-                Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
-
-                    if(!started)
-                    {
-                        prevPositions[agent.id] = newAgentPosition;
-                        agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
-                    }
-                    else
-                    {
-                        Vector3 currentPosition = new Vector3();
-                        if(currPositions.TryGetValue(agent.id, out currentPosition))
-                            prevPositions[agent.id] = currentPosition;
-                        currPositions[agent.id] = newAgentPosition;
-                    }
+                Instantiate(trafficLightsPrefab, new Vector3(trafficLight.x, trafficLight.y, trafficLight.z), Quaternion.identity);
             }
-
-            updated = true;
-            if(!started) started = true;
         }
     }
 
-    IEnumerator GetObstacleData() 
+
+   void RemoveArrivedAgents()
+{
+    List<string> agentsToRemove = new List<string>();
+    Debug.Log($"Agents count before removal: {agents.Count}");
+
+
+    // Check which agents have arrived and need to be removed
+    foreach (var agentData in agentsData.positions)
     {
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getObstaclesEndpoint);
-        yield return www.SendWebRequest();
- 
-        if (www.result != UnityWebRequest.Result.Success)
-            Debug.Log(www.error);
-        else 
+        if (agentData.hasArrived)
         {
-            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
-
-            Debug.Log(obstacleData.positions);
-
-            foreach(AgentData obstacle in obstacleData.positions)
-            {
-                Instantiate(obstaclePrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
-            }
+            Debug.Log($"Agent ID {agentData.id} marked for removal");
+            agentsToRemove.Add(agentData.id);
         }
     }
+
+    // Remove the agents from the dictionary and scene
+    foreach (var agentId in agentsToRemove)
+    {
+        if (agents.TryGetValue(agentId, out GameObject agentObj))
+        {
+            Debug.Log($"Attempting to remove agent ID: {agentId}");
+
+            try
+            {
+                // Try to destroy the agent and catch any potential exceptions
+                Destroy(agentObj);
+                Debug.Log($"Agent ID: {agentId} destroyed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error while destroying agent ID: {agentId}: {ex.Message}");
+            }
+
+            agents.Remove(agentId);
+            prevPositions.Remove(agentId);
+            currPositions.Remove(agentId);
+        }
+    }
+    Debug.Log($"Agents count after removal: {agents.Count}");
+
+}
 }
