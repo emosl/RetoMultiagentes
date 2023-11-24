@@ -1,49 +1,114 @@
-from mesa import Model, agent
+from mesa import Model
+import random
 from mesa.time import RandomActivation
-from mesa.space import SingleGrid
-from .agent import RandomAgent, ObstacleAgent
+from mesa.space import MultiGrid
+from randomAgents.agent import *
+import json
 
-class RandomModel(Model):
+
+class CityModel(Model):
     """ 
-    Creates a new model with random agents.
-    Args:
-        N: Number of agents in the simulation
-        height, width: The size of the grid to model
+        Creates a model based on a city map.
+
+        Args:
+            N: Number of agents in the simulation
     """
-    def __init__(self, N, width, height):
-        self.num_agents = N
-        # Multigrid is a special type of grid where each cell can contain multiple agents.
-        self.grid = SingleGrid(width, height, torus = False) 
+    def __init__(self, number_agents):
 
-        # RandomActivation is a scheduler that activates each agent once per step, in random order.
-        self.schedule = RandomActivation(self)
+        # Load the map dictionary. The dictionary maps the characters in the map file to the corresponding agent.
+        dataDictionary = json.load(open("city_files/mapDictionary.json"))
+
+        self.traffic_lights = []
+
+        # Load the map file. The map file is a text file where each character represents an agent.
+        with open('city_files/2022_base.txt') as baseFile:
+            lines = baseFile.readlines()
+            self.width = len(lines[0])-1
+            self.height = len(lines)
+
+            self.grid = MultiGrid(self.width, self.height, torus = False) 
+            print("Grid dimensions:", self.width, self.height)
+            
+            self.schedule = RandomActivation(self)
+            self.I_locations = []
+            self.D_locations = []
+            # self.num_agents = number_agents
+
+
+            # Goes through each character in the map file and creates the corresponding agent.
+            for r, row in enumerate(lines):
+                for c, col in enumerate(row):
+                    if col in ["v", "^", ">", "<"]:
+                        agent = Road(f"r_{r*self.width+c}", self, dataDictionary[col])
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+                    
+                    elif col == "I":
+                        agent = Initialization(f"I_{r*self.width+c}", self)
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+                        self.I_locations.append((c, self.height - r - 1))
+
+                    # elif col in ["S", "s"]:
+                    #     agent = Traffic_Light(f"tl_{r*self.width+c}", self, False if col == "S" else True, int(dataDictionary[col]))
+                    #     self.grid.place_agent(agent, (c, self.height - r - 1))
+                    #     self.schedule.add(agent)
+                    #     self.traffic_lights.append(agent)
+
+                    elif col == "S":
+                        agent = Traffic_Light(f"tl_S{r*self.width+c}", self, False, int(dataDictionary[col]), "S")
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+                        self.schedule.add(agent)
+                        self.traffic_lights.append(agent)
+                    elif col == "s":
+                        agent = Traffic_Light(f"tl_s{r*self.width+c}", self, True, int(dataDictionary[col]), "s")
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+                        self.schedule.add(agent)
+                        self.traffic_lights.append(agent)
+
+                    elif col == "#":
+                        agent = Obstacle(f"ob_{r*self.width+c}", self)
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+
+                    elif col == "D":
+                        agent = Destination(f"d_{r*self.width+c}", self)
+                        self.grid.place_agent(agent, (c, self.height - r - 1))
+                        self.D_locations.append((c, self.height - r - 1))
         
-        self.running = True 
+        
+        self.num_agents = 0
+        self.running = True
+        self.step_count = 0
+        self.initialize_car()
+        
 
-        # Creates the border of the grid
-        border = [(x,y) for y in range(height) for x in range(width) if y in [0, height-1] or x in [0, width - 1]]
+        
 
-        # Add obstacles to the grid
-        for pos in border:
-            obs = ObstacleAgent(pos, self)
-            self.grid.place_agent(obs, pos)
 
-        # Function to generate random positions
-        pos_gen = lambda w, h: (self.random.randrange(w), self.random.randrange(h))
+    def initialize_car(self):
+        if self.I_locations and self.D_locations:
+            random_I_location = random.choice(self.I_locations)
+            random_D_location = random.choice(self.D_locations)
+            car_agent = Car(1000 + self.num_agents, self, random_D_location)  
+            self.grid.place_agent(car_agent, random_I_location)
+            self.schedule.add(car_agent)
+            self.num_agents += 1
+            
 
-        # Add the agent to a random empty grid cell
-        for i in range(self.num_agents):
 
-            a = RandomAgent(i+1000, self) 
-            self.schedule.add(a)
-
-            pos = pos_gen(self.grid.width, self.grid.height)
-
-            while (not self.grid.is_cell_empty(pos)):
-                pos = pos_gen(self.grid.width, self.grid.height)
-
-            self.grid.place_agent(a, pos)
 
     def step(self):
         '''Advance the model by one step.'''
         self.schedule.step()
+        self.step_count += 1  
+        # self.initialize_car()
+        ("STEP MODEL", self.step_count)
+        print("NUMBER OF AGENTS: ", self.num_agents)
+        
+        if self.step_count % 10 == 0:
+            for i in range(4):
+                if self.I_locations:
+                    I_location = self.I_locations[i]
+                    random_D_location = random.choice(self.D_locations)
+                    car_agent = Car(1000 + self.num_agents, self, random_D_location)  
+                    self.grid.place_agent(car_agent, I_location)
+                    self.schedule.add(car_agent)
+                    self.num_agents += 1
