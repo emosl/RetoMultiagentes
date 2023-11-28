@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8621662365434511320, guid: 83c78811edb644f278524d617330eaa7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 17.762543
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8621662365434511320, guid: 83c78811edb644f278524d617330eaa7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -18,7 +18,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8621662365434511320, guid: 83c78811edb644f278524d617330eaa7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.6533804
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8621662365434511320, guid: 83c78811edb644f278524d617330eaa7, type: 3}
       propertyPath: m_LocalRotation.w
@@ -56,8 +56,38 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: ac3f8a8176fda4ea38340b025d78e8af, type: 2}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 2725764069175767257, guid: 83c78811edb644f278524d617330eaa7, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8621662365434536952, guid: 83c78811edb644f278524d617330eaa7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3818856173822976841}
   m_SourcePrefab: {fileID: 100100000, guid: 83c78811edb644f278524d617330eaa7, type: 3}
+--- !u!1 &8529952962776895675 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8621662365434536952, guid: 83c78811edb644f278524d617330eaa7, type: 3}
+  m_PrefabInstance: {fileID: 127850367044023107}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3818856173822976841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8529952962776895675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32de283c385c34c0bbfcedd5eda9f975, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  displacement: {x: 0, y: 0, z: 0}
+  rotationAxis: 1
+  Wheel: {fileID: 5325402747247452868, guid: 040e28b0e94244d89b035e17bc25abe1, type: 3}
+  scaling: {x: 0, y: 0, z: 0}
+  wheelRotationSpeed: 0

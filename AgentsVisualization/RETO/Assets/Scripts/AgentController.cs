@@ -37,6 +37,7 @@ public class AgentData
     }
 }
 
+
 [Serializable]
 
 public class AgentsData
@@ -92,11 +93,13 @@ public class AgentController : MonoBehaviour
 
     bool updated = false, started = false;
 
-    public GameObject agentPrefab, trafficLightsPrefab;
+    public GameObject trafficLightsPrefab; 
+    // agentPrefab, 
     // public int NAgents, width, height;
     public float timeToUpdate = 1.0f;
     private float timer, dt;
     private int NAgents = 0;
+    public GameObject[] carPrefabs;
 
 
     void Start()
@@ -214,7 +217,9 @@ IEnumerator GetAgentsData()
         if (!agents.ContainsKey(agent.id))
         {
             // Instantiate new agent if it doesn't exist
-            GameObject newAgent = Instantiate(agentPrefab, initialPos, Quaternion.identity);
+            // GameObject newAgent = Instantiate(agentPrefab, initialPos, Quaternion.identity);
+            GameObject selectedCarPrefab = carPrefabs[UnityEngine.Random.Range(0, carPrefabs.Length)];
+            GameObject newAgent = Instantiate(selectedCarPrefab, initialPos, Quaternion.identity);
             agents[agent.id] = newAgent;
             ApplyTransforms applyTransforms = newAgent.GetComponentInChildren<ApplyTransforms>();
             applyTransforms.getPosition(newAgentPosition);
@@ -229,32 +234,7 @@ IEnumerator GetAgentsData()
             applyTransforms.getPosition(newAgentPosition);
         }
 
-        // // Keep track of the previous position
-        // prevPositions[agent.id] = currPositions.ContainsKey(agent.id) ? currPositions[agent.id] : newAgentPosition;
-        // // Update current position
-        // currPositions[agent.id] = newAgentPosition;
-    
-
-
-        // if (prevPositions.ContainsKey(agent.id))
-        // {
-        //     // Vector3 currentPosition;
-        //     // if (currPositions.TryGetValue(agent.id, out currentPosition))
-        //     // {
-        //     //     prevPositions[agent.id] = currentPosition;
-        //     // }
-        //     // currPositions[agent.id] = newAgentPosition;
-        //     ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
-        //     applyTransforms.getPosition(newAgentPosition);
-        // }
-        // else
-        // {
-        //     // prevPositions[agent.id] = newAgentPosition;
-        //     agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
-        //     ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
-        //     applyTransforms.getPosition(newAgentPosition);
-
-        // }
+        
     }
 
 
