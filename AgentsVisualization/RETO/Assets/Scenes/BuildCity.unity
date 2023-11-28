@@ -387,8 +387,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layout: {fileID: 4900000, guid: 1bd49f2e04cdbec48bb774669bd2140d, type: 3}
   roadPrefab: {fileID: 3240343348373693069, guid: 646fc54ff3078ce94bbdbd0f0d4c4a05, type: 3}
-  buildingPrefab: {fileID: 33555395739272859, guid: 10a584233fb38a918af771ddce837268, type: 3}
-  semaphorePrefab: {fileID: 8102729382312259521, guid: ec03db3fda9c46458bf4fb4f61cc11bd, type: 3}
+  buildingPrefab:
+  - {fileID: 33555395739272859, guid: 10a584233fb38a918af771ddce837268, type: 3}
+  - {fileID: 6221786404429357073, guid: ed6f231bb070c4dc18cc53db592c5e55, type: 3}
+  - {fileID: 4170499788291188735, guid: 050801433499843b78e51dbe2de9a5e2, type: 3}
+  - {fileID: 9180163215542969084, guid: 9f110cb04b3b94e75b2c5ea2b672b982, type: 3}
+  - {fileID: 3164033354935758964, guid: 2e22ea406048f45b6a1436b1ef0aaa2d, type: 3}
+  - {fileID: 3243636625190120093, guid: a1abf52a6af7d4a35b861ecd86cd2da9, type: 3}
+  semaphorePrefab: {fileID: 7500217121282245885, guid: 9c79057c24016427292cab4a61eda261, type: 3}
   tileSize: 1
 --- !u!4 &1457529884
 Transform:
