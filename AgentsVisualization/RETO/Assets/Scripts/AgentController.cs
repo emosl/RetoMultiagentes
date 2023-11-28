@@ -138,29 +138,8 @@ public class AgentController : MonoBehaviour
             // Iterates over the agents to update their positions.
             // The positions are interpolated between the previous and current positions.
             RemoveArrivedAgents();
-            foreach(var agent in currPositions)
-            {
-                if (!agents.ContainsKey(agent.Key))
-                    continue;
-                Vector3 currentPosition = agent.Value;
-                Vector3 previousPosition = prevPositions[agent.Key];
-
-                Vector3 interpolated = Vector3.Lerp(previousPosition, currentPosition, dt);
-                Vector3 direction = currentPosition - interpolated;
-
-                agents[agent.Key].transform.localPosition = interpolated;
-                if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
-                // // Debug.Log($"Agent {agent.Key} updated position: {interpolated}");
-                // if (agentObj != null) 
-                // {
-                //     agentObj.transform.localPosition = interpolated;
-                //     if(direction != Vector3.zero) 
-                //         agentObj.transform.rotation = Quaternion.LookRotation(direction);
-                // }
-            }
-
-            // float t = (timer / timeToUpdate);
-            // dt = t * t * ( 3f - 2f*t);
+            float t = (timer / timeToUpdate);
+            dt = t * t * ( 3f - 2f*t);
         }
     }
  
@@ -212,6 +191,7 @@ public class AgentController : MonoBehaviour
 
 IEnumerator GetAgentsData() 
 {
+    float scaleFactor = 1.0f;
     UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
     yield return www.SendWebRequest();
 
@@ -224,70 +204,57 @@ IEnumerator GetAgentsData()
         
         agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
         string jsonResponse = www.downloadHandler.text;
-        Debug.Log("Received raw response: " + jsonResponse);
-        Debug.Log("Received agents data. Total agents: " + agentsData.positions.Count);
-        
-
-        // foreach(AgentData agent in agentsData.positions)
-        // {
-        //     Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
-
-        //     // Update existing agent or initialize new agent
-        //     if (agent.hasArrived && prevPositions.ContainsKey(agent.id))
-                
-        //     {
-        //         Debug.Log($"Removing agent with ID: {agent.id}");
-        //         Destroy(agents[agent.id]);
-        //         agents.Remove(agent.id);
-        //         prevPositions.Remove(agent.id);
-        //         currPositions.Remove(agent.id);
-        //     }
-            
-        //     else
-        //     {
-        //         if (prevPositions.ContainsKey(agent.id))
-        //         {
-        //             Vector3 currentPosition;
-        //             if (currPositions.TryGetValue(agent.id, out currentPosition))
-        //             {
-        //                 prevPositions[agent.id] = currentPosition;
-        //             }
-        //             currPositions[agent.id] = newAgentPosition;
-        //         }
-        //         else
-        //         {
-        //             // Instantiate new agent
-        //             prevPositions[agent.id] = newAgentPosition;
-        //             agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
-        //             Debug.Log($"Agent initialized: ID = {agent.id}, Position = {newAgentPosition}");
-        //         }
-        //     }
-            
-        // }
         foreach(AgentData agent in agentsData.positions)
     {
         Debug.Log($"Agent ID: {agent.id}, Position: ({agent.x}, {agent.y}, {agent.z}), HasArrived: {agent.hasArrived}");
-        if (agent.hasArrived) continue;  // Skip processing for agents that have arrived
+        if (agent.hasArrived) continue;  
 
         Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
-
-        // Update existing agent or initialize new agent
-        if (prevPositions.ContainsKey(agent.id))
+        Vector3 initialPos = new Vector3(0,0,0);
+        if (!agents.ContainsKey(agent.id))
         {
-            Vector3 currentPosition;
-            if (currPositions.TryGetValue(agent.id, out currentPosition))
-            {
-                prevPositions[agent.id] = currentPosition;
-            }
-            currPositions[agent.id] = newAgentPosition;
+            // Instantiate new agent if it doesn't exist
+            GameObject newAgent = Instantiate(agentPrefab, initialPos, Quaternion.identity);
+            agents[agent.id] = newAgent;
+            ApplyTransforms applyTransforms = newAgent.GetComponentInChildren<ApplyTransforms>();
+            applyTransforms.getPosition(newAgentPosition);
+            applyTransforms.getPosition(newAgentPosition);
+            applyTransforms.setTime(timeToUpdate);
+            
         }
         else
         {
-            // Instantiate new agent
-            prevPositions[agent.id] = newAgentPosition;
-            agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
-            Debug.Log($"Agent initialized: ID = {agent.id}, Position = {newAgentPosition}");
+            // Update position of existing agent
+            ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
+            applyTransforms.getPosition(newAgentPosition);
         }
+
+        // // Keep track of the previous position
+        // prevPositions[agent.id] = currPositions.ContainsKey(agent.id) ? currPositions[agent.id] : newAgentPosition;
+        // // Update current position
+        // currPositions[agent.id] = newAgentPosition;
+    
+
+
+        // if (prevPositions.ContainsKey(agent.id))
+        // {
+        //     // Vector3 currentPosition;
+        //     // if (currPositions.TryGetValue(agent.id, out currentPosition))
+        //     // {
+        //     //     prevPositions[agent.id] = currentPosition;
+        //     // }
+        //     // currPositions[agent.id] = newAgentPosition;
+        //     ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
+        //     applyTransforms.getPosition(newAgentPosition);
+        // }
+        // else
+        // {
+        //     // prevPositions[agent.id] = newAgentPosition;
+        //     agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
+        //     ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
+        //     applyTransforms.getPosition(newAgentPosition);
+
+        // }
     }
 
 
