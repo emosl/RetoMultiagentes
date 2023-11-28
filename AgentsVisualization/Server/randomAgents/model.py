@@ -77,7 +77,7 @@ class CityModel(Model):
         self.num_agents = 0
         self.running = True
         self.step_count = 0
-        self.initialize_car()
+        
         
 
         
@@ -103,7 +103,7 @@ class CityModel(Model):
         ("STEP MODEL", self.step_count)
         print("NUMBER OF AGENTS: ", self.num_agents)
         
-        if self.step_count % 10 == 0:
+        if self.step_count % 5 == 0:
             for i in range(4):
                 if self.I_locations:
                     I_location = self.I_locations[i]
