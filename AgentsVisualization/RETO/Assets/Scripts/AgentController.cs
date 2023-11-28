@@ -24,6 +24,7 @@ public class AgentData
     public string id;
     public float x, y, z;
     public bool hasArrived;
+    public bool state;
     
 
 
@@ -33,7 +34,7 @@ public class AgentData
         this.x = x;
         this.y = y;
         this.z = z;
-        // this.arrivedAtDestination = arrivedAtDestination;
+        
     }
 }
 
@@ -52,6 +53,7 @@ public class AgentsData
     List<string> activeAgentIds = new List<string>();
 
     public AgentsData() => this.positions = new List<AgentData>();
+    
 }
 
 public class AgentController : MonoBehaviour
@@ -90,12 +92,11 @@ public class AgentController : MonoBehaviour
     AgentsData agentsData, trafficLights;
     Dictionary<string, GameObject> agents;
     Dictionary<string, Vector3> prevPositions, currPositions;
+    private Dictionary<string, GameObject> trafficLightObjects;
 
     bool updated = false, started = false;
 
     public GameObject trafficLightsPrefab; 
-    // agentPrefab, 
-    // public int NAgents, width, height;
     public float timeToUpdate = 1.0f;
     private float timer, dt;
     private int NAgents = 0;
@@ -111,9 +112,9 @@ public class AgentController : MonoBehaviour
         currPositions = new Dictionary<string, Vector3>();
 
         agents = new Dictionary<string, GameObject>();
+        trafficLightObjects = new Dictionary<string, GameObject>();
 
-        // floor.transform.localScale = new Vector3((float)width/10, 1, (float)height/10);
-        // floor.transform.localPosition = new Vector3((float)width/2-0.5f, 0, (float)height/2-0.5f);
+        
         
         timer = timeToUpdate;
 
@@ -156,6 +157,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             StartCoroutine(GetAgentsData());
+            StartCoroutine(GetTrafficLightsData());
         }
     }
 
@@ -194,7 +196,7 @@ public class AgentController : MonoBehaviour
 
 IEnumerator GetAgentsData() 
 {
-    float scaleFactor = 1.0f;
+    
     UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
     yield return www.SendWebRequest();
 
@@ -259,9 +261,22 @@ IEnumerator GetAgentsData()
             Debug.Log(trafficLights.positions);
 
             foreach(AgentData trafficLight in trafficLights.positions)
+        {
+            GameObject lightObj = null;
+            if (!trafficLightObjects.TryGetValue(trafficLight.id, out lightObj))
             {
-                Instantiate(trafficLightsPrefab, new Vector3(trafficLight.x, trafficLight.y, trafficLight.z), Quaternion.identity);
+                // Instantiate and store the traffic light object if it doesn't exist
+                lightObj = Instantiate(trafficLightsPrefab, new Vector3(trafficLight.x, trafficLight.y, trafficLight.z), Quaternion.identity);
+                trafficLightObjects[trafficLight.id] = lightObj;
             }
+
+            // Update the state of the traffic light
+            Light greenLight = lightObj.transform.Find("green_light").GetComponent<Light>();
+            Light redLight = lightObj.transform.Find("red_light").GetComponent<Light>();
+
+            greenLight.enabled = trafficLight.state;  // Green light on if state is true
+            redLight.enabled = !trafficLight.state;   // Red light on if state is false
+        }
         }
     }
 
