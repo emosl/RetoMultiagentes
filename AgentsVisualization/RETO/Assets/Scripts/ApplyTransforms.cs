@@ -100,8 +100,12 @@ public class ApplyTransforms : MonoBehaviour
         
         T=getT();
         Vector3 newposition=PositionLerp(startPosition, endPosition, T);
+        // Vector3 displacement = endPosition - startPosition;
+        Vector3 displacement = endPosition - startPosition;
 
-        float angleRadians = Mathf.Atan2(newposition.z, newposition.x);
+        float angleRadians = Mathf.Atan2(displacement.z, displacement.x);
+
+        // float angleRadians = Mathf.Atan2(newposition.z, newposition.x);
 
         float angle = angleRadians * Mathf.Rad2Deg - 90;
 
@@ -162,19 +166,24 @@ public class ApplyTransforms : MonoBehaviour
 
         mesh.vertices = newVertices;
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
         
 
         meshWheel1.vertices = newVertices1;
         meshWheel1.RecalculateNormals();
+        meshWheel1.RecalculateBounds();
 
         meshWheel2.vertices = newVertices2;
         meshWheel2.RecalculateNormals();
+        meshWheel2.RecalculateBounds();
 
         meshWheel3.vertices = newVertices3;
         meshWheel3.RecalculateNormals();
+        meshWheel3.RecalculateBounds();
 
         meshWheel4.vertices = newVertices4;
         meshWheel4.RecalculateNormals();
+        meshWheel4.RecalculateBounds();
 
         
     }

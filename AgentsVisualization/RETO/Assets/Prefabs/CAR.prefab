@@ -108,5 +108,5 @@ MonoBehaviour:
   displacement: {x: 0, y: 0, z: 0}
   rotationAxis: 1
   Wheel: {fileID: 5325402747247452868, guid: 040e28b0e94244d89b035e17bc25abe1, type: 3}
-  scaling: {x: 0.1, y: 0.1, z: 0.1}
+  scaling: {x: 0, y: 0, z: 0}
   wheelRotationSpeed: 0

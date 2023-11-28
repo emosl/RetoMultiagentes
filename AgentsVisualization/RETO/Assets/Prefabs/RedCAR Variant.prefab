@@ -56,8 +56,34 @@ PrefabInstance:
       propertyPath: m_Name
       value: RedCAR Variant
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -5923629176006210198, guid: 67b282b0cfbc14110ab7ff2149454607, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2344812058301997700, guid: 67b282b0cfbc14110ab7ff2149454607, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 627544758876665495}
   m_SourcePrefab: {fileID: 100100000, guid: 67b282b0cfbc14110ab7ff2149454607, type: 3}
+--- !u!1 &6539485479646700982 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2344812058301997700, guid: 67b282b0cfbc14110ab7ff2149454607, type: 3}
+  m_PrefabInstance: {fileID: 8812024128242321202}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &627544758876665495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6539485479646700982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32de283c385c34c0bbfcedd5eda9f975, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  displacement: {x: 0, y: 0, z: 0}
+  rotationAxis: 1
+  Wheel: {fileID: 5325402747247452868, guid: 040e28b0e94244d89b035e17bc25abe1, type: 3}
+  scaling: {x: 0, y: 0, z: 0}
+  wheelRotationSpeed: 0

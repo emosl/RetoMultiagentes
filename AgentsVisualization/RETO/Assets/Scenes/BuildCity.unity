@@ -338,9 +338,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 983bc179e80f15347a79dd7b044746e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agentPrefab: {fileID: 1500681134567893984, guid: 0c35ac0aeee5d4a15a82f06c0125380b, type: 3}
   trafficLightsPrefab: {fileID: 0}
   timeToUpdate: 1
+  carPrefabs:
+  - {fileID: 1500681134567893984, guid: 0c35ac0aeee5d4a15a82f06c0125380b, type: 3}
+  - {fileID: 8529952962776895675, guid: c7118180e54c54dc7b3a0ee7eb342144, type: 3}
+  - {fileID: 6539485479646700982, guid: 776a148a1c23440a7a1df1cfed40b032, type: 3}
+  - {fileID: 3090808378261413865, guid: b84847e937cd143c6a4c5c3b06bddd94, type: 3}
+  - {fileID: 8202600753467251666, guid: ede5217890f9347a0949d4bd5da424d8, type: 3}
+  - {fileID: 4108870557919854909, guid: 9b53eb33582e94b769d6a60b30bf8203, type: 3}
+  - {fileID: 8621662365434536952, guid: 83c78811edb644f278524d617330eaa7, type: 3}
 --- !u!4 &819278455
 Transform:
   m_ObjectHideFlags: 0
@@ -385,7 +392,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c7376b41e8cfe8ff91fb865d4a420f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layout: {fileID: 4900000, guid: 1bd49f2e04cdbec48bb774669bd2140d, type: 3}
+  layout: {fileID: 4900000, guid: 93288fcd42bf843d0be77ea0170dd001, type: 3}
   roadPrefab: {fileID: 3240343348373693069, guid: 646fc54ff3078ce94bbdbd0f0d4c4a05, type: 3}
   buildingPrefab:
   - {fileID: 33555395739272859, guid: 10a584233fb38a918af771ddce837268, type: 3}
