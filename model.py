@@ -76,6 +76,7 @@ class CityModel(Model):
         self.running = True
         self.step_count = 0
         self.initialize_car()
+        print("INITIALIZATION NODES", self.I_locations)
 
     def initialize_car(self):
         if self.I_locations and self.D_locations:
@@ -92,6 +93,8 @@ class CityModel(Model):
         self.schedule.step()
         self.step_count += 1  
         # self.initialize_car()
+        self.initialize_car()
+        
 
-        if self.step_count % 10 == 0:
-            self.initialize_car()
+        # if self.step_count % 10 == 0:
+        #     self.initialize_car()
