@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481676, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -403,6 +403,7 @@ MonoBehaviour:
   - {fileID: 3243636625190120093, guid: a1abf52a6af7d4a35b861ecd86cd2da9, type: 3}
   semaphorePrefab: {fileID: 7500217121282245885, guid: 9c79057c24016427292cab4a61eda261, type: 3}
   tileSize: 1
+  metricsPrefab: {fileID: 5269471307969450167, guid: d499d13016845486a98c2d3268b77337, type: 3}
 --- !u!4 &1457529884
 Transform:
   m_ObjectHideFlags: 0
