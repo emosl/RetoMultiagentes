@@ -46,6 +46,8 @@ public class ApplyTransforms : MonoBehaviour
     float motionTime=1;
     Vector3 startPosition;
     Vector3 endPosition;
+    float angle;
+    float lastAngle;
     
 
 
@@ -100,22 +102,15 @@ public class ApplyTransforms : MonoBehaviour
         
         T=getT();
         Vector3 newposition=PositionLerp(startPosition, endPosition, T);
-        // Vector3 displacement = endPosition - startPosition;
         Vector3 displacement = endPosition - startPosition;
-
-        float angleRadians = Mathf.Atan2(displacement.z, displacement.x);
-
-        // float angleRadians = Mathf.Atan2(newposition.z, newposition.x);
-
-        float angle = angleRadians * Mathf.Rad2Deg - 90;
+        if (startPosition != endPosition)
+        {
+            float angleRadians = Mathf.Atan2(displacement.z, displacement.x);
+            angle = angleRadians * Mathf.Rad2Deg - 90;
+        }
 
         
         Matrix4x4 move= HW_Transforms.TranslationMat(newposition.x , newposition.y, newposition.z);
-
-        Matrix4x4 moveOrigin= HW_Transforms.TranslationMat(-displacement.x, -displacement.y, -displacement.z);
-
-        // Matrix4x4 moveObject= HW_Transforms.TranslationMat(displacement.x, displacement.y, displacement.z);
-
         Matrix4x4 rotate = HW_Transforms.RotateMat(angle , rotationAxis );
         Matrix4x4 wheelRotate = HW_Transforms.RotateMat(Time.time * wheelRotationSpeed, AXIS.X);
         
@@ -206,6 +201,8 @@ public class ApplyTransforms : MonoBehaviour
         startPosition = endPosition;
         endPosition = newPosition;
         currentTime = 0;
+        
+        
         
     }
 
