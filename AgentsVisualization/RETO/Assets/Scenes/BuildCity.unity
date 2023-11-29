@@ -338,7 +338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 983bc179e80f15347a79dd7b044746e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  trafficLightsPrefab: {fileID: 0}
+  trafficLightsPrefab: {fileID: 1922681608823859374, guid: 9e0ef0d1487de4b16a3b6d071c396301, type: 3}
   timeToUpdate: 1
   carPrefabs:
   - {fileID: 1500681134567893984, guid: 0c35ac0aeee5d4a15a82f06c0125380b, type: 3}

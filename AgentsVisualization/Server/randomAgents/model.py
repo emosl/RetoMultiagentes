@@ -15,12 +15,12 @@ class CityModel(Model):
     """
     def __init__(self, number_agents):
 
-        # Load the map dictionary. The dictionary maps the characters in the map file to the corresponding agent.
+       
         dataDictionary = json.load(open("city_files/mapDictionary.json"))
 
         self.traffic_lights = []
 
-        # Load the map file. The map file is a text file where each character represents an agent.
+       
         with open('city_files/2023_base.txt') as baseFile:
             lines = baseFile.readlines()
             self.width = len(lines[0])-1
@@ -32,10 +32,9 @@ class CityModel(Model):
             self.schedule = RandomActivation(self)
             self.I_locations = []
             self.D_locations = []
-            # self.num_agents = number_agents
+        
 
 
-            # Goes through each character in the map file and creates the corresponding agent.
             for r, row in enumerate(lines):
                 for c, col in enumerate(row):
                     if col in ["v", "^", ">", "<"]:
@@ -47,11 +46,6 @@ class CityModel(Model):
                         self.grid.place_agent(agent, (c, self.height - r - 1))
                         self.I_locations.append((c, self.height - r - 1))
 
-                    # elif col in ["S", "s"]:
-                    #     agent = Traffic_Light(f"tl_{r*self.width+c}", self, False if col == "S" else True, int(dataDictionary[col]))
-                    #     self.grid.place_agent(agent, (c, self.height - r - 1))
-                    #     self.schedule.add(agent)
-                    #     self.traffic_lights.append(agent)
 
                     elif col == "S":
                         agent = Traffic_Light(f"tl_S{r*self.width+c}", self, False, int(dataDictionary[col]), "S")
@@ -99,7 +93,6 @@ class CityModel(Model):
         '''Advance the model by one step.'''
         self.schedule.step()
         self.step_count += 1  
-        # self.initialize_car()
         ("STEP MODEL", self.step_count)
         print("NUMBER OF AGENTS: ", self.num_agents)
         

@@ -13,13 +13,12 @@ class Car(Agent):
         Creates a new car agent.
         """
         super().__init__(unique_id, model)
-        self.destination_pos = destination_pos  # The destination position for the car  
-        self.path = None  # This will store the path the car needs to follow
-        # G = self.create_graph()
+        self.destination_pos = destination_pos 
+        self.path = None  
         self.graph = self.create_graph()
         self.stationary_steps = 0
 
-        # self.plot_graph(G)
+
 
     def plot_graph(self, graph):
         pos = {node: (node[0], -node[1]) for node in graph.nodes}  # Flip y-axis for visualization
@@ -27,7 +26,7 @@ class Car(Agent):
         plt.show()
 
     def determine_node_type(self, cell_contents):
-        node_type = ' '  # Default node type (empty or non-blocking)
+        node_type = ' '  
 
         for agent in cell_contents:
             if isinstance(agent, Obstacle):
@@ -327,12 +326,6 @@ class Car(Agent):
 
         return True
 
-    
-    # def arrived_at_destination(self):
-    #     if self.pos == self.destination_pos:
-    #         self.model.grid.remove_agent(self)
-    #         self.model.schedule.remove(self)
-
     def arrived_at_destination(self):
         if self.pos == self.destination_pos:
             self.model.grid.remove_agent(self)
@@ -347,7 +340,7 @@ class Car(Agent):
         for agent in current_cell_contents:
             if isinstance(agent, Road):
                 return agent.direction
-        return None  # Default case if no Road agent is found
+        return None 
     
     def is_within_bounds(self, position):
         """
@@ -367,7 +360,6 @@ class Car(Agent):
         side_pos1 = None
         side_pos2 = None
 
-        # Determine the diagonal and side positions based on the direction
         if direction == "Right":
             diagonal_pos1 = (current_x + 1, current_y - 1)
             diagonal_pos2 = (current_x + 1, current_y + 1)
@@ -389,20 +381,15 @@ class Car(Agent):
             side_pos1 = (current_x - 1, current_y)
             side_pos2 = (current_x + 1, current_y)
         else:
-            return False  # Invalid direction
+            return False 
 
-        # Check if both diagonal and side positions are within bounds and empty
-        # return ((self.is_within_bounds(diagonal_pos1) and self.graph.has_node(diagonal_pos1) and self.can_move_to(diagonal_pos1) and
-        #         self.is_within_bounds(side_pos1) and self.graph.has_node(side_pos1) and self.can_move_to(side_pos1)) or
-        #         (self.is_within_bounds(side_pos2) and self.graph.has_node(side_pos2) and self.can_move_to(side_pos2) and
-        #         self.is_within_bounds(diagonal_pos2) and self.graph.has_node(diagonal_pos2) and self.can_move_to(diagonal_pos2)))
         if ((self.is_within_bounds(diagonal_pos1) and self.graph.has_node(diagonal_pos1) and self.can_move_to(diagonal_pos1) and
             self.is_within_bounds(side_pos1) and self.graph.has_node(side_pos1) and self.can_move_to(side_pos1)) or
             (self.is_within_bounds(diagonal_pos2) and self.graph.has_node(diagonal_pos2) and self.can_move_to(diagonal_pos2) and
             self.is_within_bounds(side_pos2) and self.graph.has_node(side_pos2) and self.can_move_to(side_pos2))):
             return True
 
-        # Return False if neither diagonal move is possible
+
         return False
     
     def get_diagonal_positions(self):
@@ -427,7 +414,51 @@ class Car(Agent):
             diagonal_positions.append((current_x - 1, current_y - 1))
 
         return diagonal_positions
+    
+    def three_cars_ahead(self):
+        current_x, current_y = self.pos
+        direction = self.get_current_road_direction()
+        positions_to_check = []
 
+        # Calculate the three positions ahead based on the current direction
+        if direction == "Right":
+            positions_to_check = [(current_x + i, current_y) for i in range(1, 3)]
+        elif direction == "Left":
+            positions_to_check = [(current_x - i, current_y) for i in range(1, 3)]
+        elif direction == "Up":
+            positions_to_check = [(current_x, current_y + i) for i in range(1, 3)]
+        elif direction == "Down":
+            positions_to_check = [(current_x, current_y - i) for i in range(1, 3)]
+
+        car_count = 0  
+        for position in positions_to_check:
+            if not self.is_within_bounds(position):
+                continue 
+            cell_contents = self.model.grid.get_cell_list_contents(position)
+            if any(isinstance(agent, Car) for agent in cell_contents):
+                car_count += 1  # Increment counter for each car found
+        print(f"Car {self.unique_id} detected {car_count} cars ahead.")
+        return car_count == 2 
+    
+    def update_graph_weights_due_to_congestion(self):
+        current_x, current_y = self.pos
+        direction = self.get_current_road_direction()
+        positions_to_update = []
+
+        if direction == "Right":
+            positions_to_update = [(current_x + i, current_y) for i in range(1, 3)]
+        elif direction == "Left":
+            positions_to_update = [(current_x - i, current_y) for i in range(1, 3)]
+        elif direction == "Up":
+            positions_to_update = [(current_x, current_y + i) for i in range(1, 3)]
+        elif direction == "Down":
+            positions_to_update = [(current_x, current_y - i) for i in range(1, 3)]
+
+        for position in positions_to_update:
+            if self.graph.has_node(position):
+                for neighbor in self.graph.predecessors(position):
+                    if self.graph.has_edge(neighbor, position):
+                        self.graph[neighbor][position]['weight'] += 30
 
 
 
@@ -437,42 +468,37 @@ class Car(Agent):
         Moves the car along the path determined by A*.
         Recalculates the path if blocked and moves diagonally if necessary.
         """
+        
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
-            self.stationary_steps = 0  # Reset counter when a new path is calculated
-
+           
         if self.path and len(self.path) > 0:
             next_position = self.path[0]  # Get the next position
-            if self.can_move_to(next_position):
+            if self.can_move_to(next_position) and not self.three_cars_ahead():
                 self.model.grid.move_agent(self, next_position)
-                self.path.pop(0)  # Remove the next position from the path
-                self.stationary_steps = 0  # Reset counter as the car moved
+                self.path.pop(0) 
+                
             else:
-                self.stationary_steps += 1  # Increment counter as the car is stationary
-                print("STATIONARY STEPS: ", self.stationary_steps)
-                # if self.stationary_steps >= 3:
-                #     # Check if the car can move diagonally
-                #     if self.can_move_diagonally():
-                #         diagonal_position = self.get_diagonal_position()
-                #         self.model.grid.move_agent(self, diagonal_position)
-                #         print(f"Car {self.unique_id} moved diagonally to {diagonal_position}")
-                #         self.path = self.find_path(diagonal_position, self.destination_pos)
-                #         self.stationary_steps = 0  # Reset after successful diagonal move
-                if self.stationary_steps >= 3:
+                self.stationary_steps += 1  
+                if self.three_cars_ahead():
+                    print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
                     diagonal_positions = self.get_diagonal_positions()
                     for diag_pos in diagonal_positions:
                         if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos):
+                            self.update_graph_weights_due_to_congestion()
                             self.model.grid.move_agent(self, diag_pos)
                             print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
+                            print("PATH BEFORE", self.path)  
                             self.path = self.find_path(diag_pos, self.destination_pos)
-                            self.stationary_steps = 0  # Reset the stationary steps after successful diagonal move
-            
+                            print("PATH AFTER", self.path)
+                            self.stationary_steps = 0  
+                            break
                         else:
-                            # Recalculate path if diagonal move is not possible
+                            print(f"Diagonal move to {diag_pos} not possible for Car {self.unique_id}.")
                             self.path = self.find_path(self.pos, self.destination_pos)
                             if not self.path:
                                 print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
-                            self.stationary_steps = 0  # Reset counter after recalculating path
+                            self.stationary_steps = 0   
 
 
 
@@ -480,17 +506,6 @@ class Car(Agent):
         """
         Determines the new path using A* and moves along it.
         """
-        
-        # G = self.create_graph()
-
-        # # Print the directed edges
-        # for edge in G.edges():
-        #     source, target = edge
-        #     print(f"Node {source} directed to Node {target}")
-        
-        
-        # self.move()
-        # self.arrived_at_destination()
         if self.pos != self.destination_pos:
             self.move()
         else:
@@ -517,7 +532,6 @@ class Traffic_Light(Agent):
         self.traffic_light_states = {'S': False, 's': True}
 
     def toggle_traffic_lights(self, light_type):
-        # Toggle the state of the specified light type
         previous_state = self.traffic_light_states[light_type]
         if light_type == 'S':
             self.traffic_light_states['S'] = not self.traffic_light_states['S']
@@ -526,13 +540,10 @@ class Traffic_Light(Agent):
             self.traffic_light_states['s'] = not self.traffic_light_states['s']
             self.traffic_light_states['S'] = not self.traffic_light_states['s']
 
-        # print(f"Traffic Light '{light_type}' state changed from {previous_state} to {self.traffic_light_states[light_type]}")
-        # print(f"Current States - S: {self.traffic_light_states['S']}, s: {self.traffic_light_states['s']}")
-        
+       
 
     def step(self):
         if self.model.schedule.steps % self.timeToChange == 0:
-            # Toggle the state of this type of light
             self.toggle_traffic_lights(self.light_type)
             self.state = self.traffic_light_states[self.light_type]
 
