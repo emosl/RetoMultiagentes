@@ -16,6 +16,8 @@ class Car(Agent):
         self.destination_pos = destination_pos  # The destination position for the car  
         self.path = None  # This will store the path the car needs to follow
         # G = self.create_graph()
+        self.graph = self.create_graph()
+        self.stationary_steps = 0
 
         # self.plot_graph(G)
 
@@ -75,34 +77,34 @@ class Car(Agent):
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node in ['s', 'D', '>', 'I','^' ]:
-                            G.add_edge((x, y), (x + 1, y))
+                            G.add_edge((x, y), (x + 1, y), weight = 1)
 
                     # Up to ^, D
                     if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', 'D']:
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y + 1), weight = 1)
 
                     if y - 1 > 0:
                         up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['v', 'D', "I"]:
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y - 1), weight = 1)
 
                     # Up-right to >
                     if y - 1 >= 0 and x + 1 < cols:
                         up_right_cell_contents = grid.get_cell_list_contents([(x + 1, y - 1)])
                         up_right_node = self.determine_node_type(up_right_cell_contents)
                         if up_right_node == '>':
-                            G.add_edge((x, y), (x + 1, y - 1))
+                            G.add_edge((x, y), (x + 1, y - 1), weight =  2)
 
                     # Up-left to >
                     if y + 1 < rows and x + 1 < cols:
                         up_left_cell_contents = grid.get_cell_list_contents([(x + 1, y + 1)])
                         up_left_node = self.determine_node_type(up_left_cell_contents)
                         if up_left_node == '>':
-                            G.add_edge((x, y), (x + 1, y + 1))
+                            G.add_edge((x, y), (x + 1, y + 1), weight = 2)
 
                     
                     
@@ -114,34 +116,34 @@ class Car(Agent):
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in ['s', 'D', '<', 'I', "v"]:
-                            G.add_edge((x, y), (x - 1, y))
+                            G.add_edge((x, y), (x - 1, y), weight = 1)
 
                     # Up to ^, D
                     if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', 'D']:
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y + 1), weight = 1)
                     
                     if y - 1 > 0:
                         up_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['v', 'D']:
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y - 1), weight = 1)
 
                     # Down-left to <
                     if y + 1 < rows and x - 1 > 0:
                         down_left_cell_contents = grid.get_cell_list_contents([(x - 1, y + 1)])
                         down_left_node = self.determine_node_type(down_left_cell_contents)
                         if down_left_node == '<':
-                            G.add_edge((x, y), (x - 1, y + 1))
+                            G.add_edge((x, y), (x - 1, y + 1), weight = 2)
 
                     # Down-right to <
                     if y - 1 > 0 and x - 1 > 0:
                         down_right_cell_contents = grid.get_cell_list_contents([(x - 1, y - 1)])
                         down_right_node = self.determine_node_type(down_right_cell_contents)
                         if down_right_node == '<':
-                            G.add_edge((x, y), (x - 1, y - 1))
+                            G.add_edge((x, y), (x - 1, y - 1), weight = 2)
 
 
                 # Check for '^'
@@ -151,35 +153,35 @@ class Car(Agent):
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', 'D', 'I', 'S', "<", ">"]:
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y + 1), weight = 1)
 
                     # Left to D, <, I
                     if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in ['D', '<', 'I']:
-                            G.add_edge((x, y), (x - 1, y))
+                            G.add_edge((x, y), (x - 1, y), weight = 2)
 
                     # Right to D, >, I
                     if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node in ['D', '>', 'I']:
-                            G.add_edge((x, y), (x + 1, y))
+                            G.add_edge((x, y), (x + 1, y), weight = 1)
 
                     # Up-left to ^
                     if y + 1  < rows and x + 1 < cols:
                         up_left_cell_contents = grid.get_cell_list_contents([(x + 1, y + 1)])
                         up_left_node = self.determine_node_type(up_left_cell_contents)
                         if up_left_node == '^':
-                            G.add_edge((x, y), (x + 1, y + 1))
+                            G.add_edge((x, y), (x + 1, y + 1), weight = 2)
 
                     # Down-left to ^
                     if y + 1 < rows and x - 1 > 0:
                         down_left_cell_contents = grid.get_cell_list_contents([(x - 1, y + 1)])
                         down_left_node = self.determine_node_type(down_left_cell_contents)
                         if down_left_node == '^':
-                            G.add_edge((x, y), (x - 1, y + 1))
+                            G.add_edge((x, y), (x - 1, y + 1), weight = 2)
 
 
 
@@ -189,33 +191,33 @@ class Car(Agent):
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
                         if down_node in ['v', 'D', 'I', 'S', ">", "<"]:
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y - 1), weight = 1)
 
                     # Right to >, I, D
                     if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node in ['>', 'I', 'D']:
-                            G.add_edge((x, y), (x + 1, y))
+                            G.add_edge((x, y), (x + 1, y), weight = 1)
 
                     # Left to <, I, D
                     if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in ['<', 'I', 'D']:
-                            G.add_edge((x, y), (x - 1, y))
+                            G.add_edge((x, y), (x - 1, y) , weight = 1)
                     
                     if y - 1 > 0 and x - 1 >= 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y-1)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node == 'v':
-                            G.add_edge((x, y), (x - 1, y-1))
+                            G.add_edge((x, y), (x - 1, y-1), weight = 2)
 
                     if y - 1 > 0 and x + 1 < cols:
                         left_cell_contents = grid.get_cell_list_contents([(x + 1, y-1)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node == 'v':
-                            G.add_edge((x, y), (x + 1, y-1))
+                            G.add_edge((x, y), (x + 1, y-1), weight = 2)
 
 
                 # Check for 'S'
@@ -225,14 +227,14 @@ class Car(Agent):
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
                         if down_node in ['v', ">"]:
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y - 1), weight = 1)
 
                     # Up to ^
                     if y + 1 < rows:
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node in ['^', "<"]:
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y + 1), weight = 1)
 
                 # Check for 's'
                 if node == 's':
@@ -241,14 +243,14 @@ class Car(Agent):
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node in ['>', '^', "v"]:
-                            G.add_edge((x, y), (x + 1, y))
+                            G.add_edge((x, y), (x + 1, y), weight = 1)
 
                     # Left to <
                     if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node in  ['<', '^', "v"]:
-                            G.add_edge((x, y), (x - 1, y))
+                            G.add_edge((x, y), (x - 1, y), weight = 1)
 
                 # Check for 'I'
                 if node == 'I':
@@ -257,28 +259,28 @@ class Car(Agent):
                         up_cell_contents = grid.get_cell_list_contents([(x, y + 1)])
                         up_node = self.determine_node_type(up_cell_contents)
                         if up_node == '^':
-                            G.add_edge((x, y), (x, y + 1))
+                            G.add_edge((x, y), (x, y + 1), weight = 1)
 
                     # Down to v
                     if y - 1 > 0:
                         down_cell_contents = grid.get_cell_list_contents([(x, y - 1)])
                         down_node = self.determine_node_type(down_cell_contents)
                         if down_node == 'v':
-                            G.add_edge((x, y), (x, y - 1))
+                            G.add_edge((x, y), (x, y - 1), weight = 1)
 
                     # Left to <
                     if x - 1 > 0:
                         left_cell_contents = grid.get_cell_list_contents([(x - 1, y)])
                         left_node = self.determine_node_type(left_cell_contents)
                         if left_node == '<':
-                            G.add_edge((x, y), (x - 1, y))
+                            G.add_edge((x, y), (x - 1, y), weight = 1)
 
                     # Right to >
                     if x + 1 < cols:
                         right_cell_contents = grid.get_cell_list_contents([(x + 1, y)])
                         right_node = self.determine_node_type(right_cell_contents)
                         if right_node == '>':
-                            G.add_edge((x, y), (x + 1, y))
+                            G.add_edge((x, y), (x + 1, y), weight = 1)
 
         return G
     
@@ -289,7 +291,7 @@ class Car(Agent):
         print(adjacency_matrix)
 
     def find_path(self, start, end):
-        G = self.create_graph()
+        G = self.graph
         start_node_type = self.determine_node_type(self.model.grid.get_cell_list_contents([start]))
         end_node_type = self.determine_node_type(self.model.grid.get_cell_list_contents([end]))
         
@@ -336,20 +338,143 @@ class Car(Agent):
             self.model.grid.remove_agent(self)
             self.model.schedule.remove(self)
             return True
+        
+    def get_current_road_direction(self):
+        """
+        Returns the direction of the Road agent on which the car is currently located.
+        """
+        current_cell_contents = self.model.grid.get_cell_list_contents(self.pos)
+        for agent in current_cell_contents:
+            if isinstance(agent, Road):
+                return agent.direction
+        return None  # Default case if no Road agent is found
+    
+    def is_within_bounds(self, position):
+        """
+        Checks if the given position is within the bounds of the grid.
+        """
+        x, y = position
+        return 0 <= x < self.model.grid.width and 0 <= y < self.model.grid.height
+    
+    def can_move_diagonally(self):
+        """
+        Checks if the car can move diagonally based on its current direction.
+        """
+        current_x, current_y = self.pos
+        direction = self.get_current_road_direction()
+        diagonal_pos1 = None
+        diagonal_pos2 = None
+        side_pos1 = None
+        side_pos2 = None
+
+        # Determine the diagonal and side positions based on the direction
+        if direction == "Right":
+            diagonal_pos1 = (current_x + 1, current_y - 1)
+            diagonal_pos2 = (current_x + 1, current_y + 1)
+            side_pos1 = (current_x, current_y - 1)
+            side_pos2 = (current_x, current_y + 1)
+        elif direction == "Left":
+            diagonal_pos1 = (current_x - 1, current_y - 1)
+            diagonal_pos2 = (current_x - 1, current_y + 1)
+            side_pos1 = (current_x, current_y - 1)
+            side_pos2 = (current_x, current_y + 1)
+        elif direction == "Up":
+            diagonal_pos1 = (current_x - 1, current_y + 1)
+            diagonal_pos2 = (current_x + 1, current_y + 1)
+            side_pos1 = (current_x - 1, current_y)
+            side_pos2 = (current_x + 1, current_y)
+        elif direction == "Down":
+            diagonal_pos1 = (current_x - 1, current_y - 1)
+            diagonal_pos2 = (current_x + 1, current_y - 1)
+            side_pos1 = (current_x - 1, current_y)
+            side_pos2 = (current_x + 1, current_y)
+        else:
+            return False  # Invalid direction
+
+        # Check if both diagonal and side positions are within bounds and empty
+        # return ((self.is_within_bounds(diagonal_pos1) and self.graph.has_node(diagonal_pos1) and self.can_move_to(diagonal_pos1) and
+        #         self.is_within_bounds(side_pos1) and self.graph.has_node(side_pos1) and self.can_move_to(side_pos1)) or
+        #         (self.is_within_bounds(side_pos2) and self.graph.has_node(side_pos2) and self.can_move_to(side_pos2) and
+        #         self.is_within_bounds(diagonal_pos2) and self.graph.has_node(diagonal_pos2) and self.can_move_to(diagonal_pos2)))
+        if ((self.is_within_bounds(diagonal_pos1) and self.graph.has_node(diagonal_pos1) and self.can_move_to(diagonal_pos1) and
+            self.is_within_bounds(side_pos1) and self.graph.has_node(side_pos1) and self.can_move_to(side_pos1)) or
+            (self.is_within_bounds(diagonal_pos2) and self.graph.has_node(diagonal_pos2) and self.can_move_to(diagonal_pos2) and
+            self.is_within_bounds(side_pos2) and self.graph.has_node(side_pos2) and self.can_move_to(side_pos2))):
+            return True
+
+        # Return False if neither diagonal move is possible
+        return False
+    
+    def get_diagonal_positions(self):
+        """
+        Returns a list of possible diagonal positions based on the current direction.
+        """
+        current_x, current_y = self.pos
+        direction = self.get_current_road_direction()
+        diagonal_positions = []
+
+        if direction == "Right":
+            diagonal_positions.append((current_x + 1, current_y - 1))
+            diagonal_positions.append((current_x + 1, current_y + 1))
+        elif direction == "Left":
+            diagonal_positions.append((current_x - 1, current_y + 1))
+            diagonal_positions.append((current_x - 1, current_y - 1))
+        elif direction == "Up":
+            diagonal_positions.append((current_x - 1, current_y + 1))
+            diagonal_positions.append((current_x + 1, current_y + 1))
+        elif direction == "Down":
+            diagonal_positions.append((current_x + 1, current_y - 1))
+            diagonal_positions.append((current_x - 1, current_y - 1))
+
+        return diagonal_positions
+
+
+
 
 
     def move(self):
         """
         Moves the car along the path determined by A*.
+        Recalculates the path if blocked and moves diagonally if necessary.
         """
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
+            self.stationary_steps = 0  # Reset counter when a new path is calculated
 
         if self.path and len(self.path) > 0:
             next_position = self.path[0]  # Get the next position
             if self.can_move_to(next_position):
-                self.path.pop(0)  # Remove the next position from the path
                 self.model.grid.move_agent(self, next_position)
+                self.path.pop(0)  # Remove the next position from the path
+                self.stationary_steps = 0  # Reset counter as the car moved
+            else:
+                self.stationary_steps += 1  # Increment counter as the car is stationary
+                print("STATIONARY STEPS: ", self.stationary_steps)
+                # if self.stationary_steps >= 3:
+                #     # Check if the car can move diagonally
+                #     if self.can_move_diagonally():
+                #         diagonal_position = self.get_diagonal_position()
+                #         self.model.grid.move_agent(self, diagonal_position)
+                #         print(f"Car {self.unique_id} moved diagonally to {diagonal_position}")
+                #         self.path = self.find_path(diagonal_position, self.destination_pos)
+                #         self.stationary_steps = 0  # Reset after successful diagonal move
+                if self.stationary_steps >= 3:
+                    diagonal_positions = self.get_diagonal_positions()
+                    for diag_pos in diagonal_positions:
+                        if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos):
+                            self.model.grid.move_agent(self, diag_pos)
+                            print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
+                            self.path = self.find_path(diag_pos, self.destination_pos)
+                            self.stationary_steps = 0  # Reset the stationary steps after successful diagonal move
+            
+                        else:
+                            # Recalculate path if diagonal move is not possible
+                            self.path = self.find_path(self.pos, self.destination_pos)
+                            if not self.path:
+                                print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
+                            self.stationary_steps = 0  # Reset counter after recalculating path
+
+
 
     def step(self):
         """
