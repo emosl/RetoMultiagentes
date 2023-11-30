@@ -2,6 +2,8 @@ from mesa import Agent
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
 
 class Car(Agent):
     """
@@ -17,6 +19,7 @@ class Car(Agent):
         self.path = None  
         self.graph = self.create_graph()
         self.stationary_steps = 0
+        self.threshold = random.uniform(0, 5)
 
 
 
@@ -420,7 +423,7 @@ class Car(Agent):
         direction = self.get_current_road_direction()
         positions_to_check = []
 
-        # Calculate the three positions ahead based on the current direction
+        
         if direction == "Right":
             positions_to_check = [(current_x + i, current_y) for i in range(1, 3)]
         elif direction == "Left":
@@ -460,26 +463,89 @@ class Car(Agent):
                     if self.graph.has_edge(neighbor, position):
                         self.graph[neighbor][position]['weight'] += 30
 
+    
+    def get_adjacent_cars(self):
+        adjacent_positions = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
+        adjacent_cars = []
+        for position in adjacent_positions:
+            cell_contents = self.model.grid.get_cell_list_contents(position)
+            for agent in cell_contents:
+                if isinstance(agent, Car):
+                    adjacent_cars.append(agent)
+        return adjacent_cars
+    
 
+    def get_next_move(self):
+        if self.path and len(self.path) > 0:
+            return self.path[0]
+        return None
+    
+    def get_next_diagonal_move(self):
+        direction = self.get_current_road_direction()
+        current_x, current_y = self.pos
+        if direction == "Right":
+            return (current_x + 1, current_y + 1), (current_x + 1, current_y - 1)
+        elif direction == "Left":
+            return (current_x - 1, current_y + 1), (current_x - 1, current_y - 1)
+        elif direction == "Up":
+            return (current_x + 1, current_y + 1), (current_x - 1, current_y + 1)
+        elif direction == "Down":
+            return (current_x - 1, current_y - 1), (current_x + 1, current_y - 1)
 
+        return None
+    
+    def get_next_front_move(self):
+        direction = self.get_current_road_direction()
+        current_x, current_y = self.pos
 
+        if direction == "Right":
+            return (current_x + 1, current_y)
+        elif direction == "Left":
+            return (current_x - 1, current_y)
+        elif direction == "Up":
+            return (current_x, current_y + 1)
+        elif direction == "Down":
+            return (current_x, current_y - 1)
+
+        return None
+    
+    def is_diagonal_intersection(self, adjacent_car):
+        my_next_diagonal_moves = self.get_next_diagonal_move()
+        their_next_front_move = adjacent_car.get_next_front_move()
+        my_next_front_move = self.get_next_front_move()
+        their_next_diagonal_moves = adjacent_car.get_next_diagonal_move()
+
+        if my_next_diagonal_moves and their_next_front_move:
+            if their_next_front_move in my_next_diagonal_moves:
+                return True
+
+        if their_next_diagonal_moves and my_next_front_move:
+            if my_next_front_move in their_next_diagonal_moves:
+                return True
+
+        return False
+    
     def move(self):
-        """
-        Moves the car along the path determined by A*.
-        Recalculates the path if blocked and moves diagonally if necessary.
-        """
-        
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
-           
+
         if self.path and len(self.path) > 0:
-            next_position = self.path[0]  # Get the next position
+            next_position = self.path[0]  
+
             if self.can_move_to(next_position) and not self.three_cars_ahead():
+                adjacent_cars = self.get_adjacent_cars()
+                for adjacent_car in adjacent_cars:
+                    if self.is_diagonal_intersection(adjacent_car):
+                        if self.threshold < adjacent_car.threshold:
+                            return  
+                        if self.threshold == adjacent_car.threshold:
+                            if random.choice([True, False]):
+                                return
+
                 self.model.grid.move_agent(self, next_position)
-                self.path.pop(0) 
-                
+                self.path.pop(0)  
             else:
-                self.stationary_steps += 1  
+                self.stationary_steps += 1
                 if self.three_cars_ahead():
                     print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
                     diagonal_positions = self.get_diagonal_positions()
@@ -488,17 +554,54 @@ class Car(Agent):
                             self.update_graph_weights_due_to_congestion()
                             self.model.grid.move_agent(self, diag_pos)
                             print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
-                            print("PATH BEFORE", self.path)  
                             self.path = self.find_path(diag_pos, self.destination_pos)
-                            print("PATH AFTER", self.path)
-                            self.stationary_steps = 0  
+                            self.stationary_steps = 0
                             break
                         else:
                             print(f"Diagonal move to {diag_pos} not possible for Car {self.unique_id}.")
                             self.path = self.find_path(self.pos, self.destination_pos)
-                            if not self.path:
-                                print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
                             self.stationary_steps = 0   
+
+
+
+
+
+    # def move(self):
+    #     """
+    #     Moves the car along the path determined by A*.
+    #     Recalculates the path if blocked and moves diagonally if necessary.
+    #     """
+        
+    #     if self.path is None or len(self.path) == 0:
+    #         self.path = self.find_path(self.pos, self.destination_pos)
+           
+    #     if self.path and len(self.path) > 0:
+    #         next_position = self.path[0]  # Get the next position
+    #         if self.can_move_to(next_position) and not self.three_cars_ahead():
+    #             self.model.grid.move_agent(self, next_position)
+    #             self.path.pop(0) 
+                
+    #         else:
+    #             self.stationary_steps += 1  
+    #             if self.three_cars_ahead():
+    #                 print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
+    #                 diagonal_positions = self.get_diagonal_positions()
+    #                 for diag_pos in diagonal_positions:
+    #                     if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos):
+    #                         self.update_graph_weights_due_to_congestion()
+    #                         self.model.grid.move_agent(self, diag_pos)
+    #                         print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
+    #                         print("PATH BEFORE", self.path)  
+    #                         self.path = self.find_path(diag_pos, self.destination_pos)
+    #                         print("PATH AFTER", self.path)
+    #                         self.stationary_steps = 0  
+    #                         break
+    #                     else:
+    #                         print(f"Diagonal move to {diag_pos} not possible for Car {self.unique_id}.")
+    #                         self.path = self.find_path(self.pos, self.destination_pos)
+    #                         if not self.path:
+    #                             print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
+    #                         self.stationary_steps = 0   
 
 
 

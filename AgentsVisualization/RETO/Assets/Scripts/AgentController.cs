@@ -101,6 +101,9 @@ public class AgentController : MonoBehaviour
     private float timer, dt;
     private int NAgents = 0;
     public GameObject[] carPrefabs;
+    public GameObject helicopterPrefab;
+    private HelicopterController helicopterController;
+
 
 
     void Start()
@@ -114,8 +117,9 @@ public class AgentController : MonoBehaviour
         agents = new Dictionary<string, GameObject>();
         trafficLightObjects = new Dictionary<string, GameObject>();
 
-        
-        
+        GameObject helicopterObj = Instantiate(helicopterPrefab, RandomGridPosition(), Quaternion.identity);
+        helicopterController = helicopterObj.GetComponent<HelicopterController>();
+
         timer = timeToUpdate;
 
         // Launches a couroutine to send the configuration to the server.
@@ -144,6 +148,11 @@ public class AgentController : MonoBehaviour
             RemoveArrivedAgents();
             float t = (timer / timeToUpdate);
             dt = t * t * ( 3f - 2f*t);
+            if (helicopterController != null && Vector3.Distance(helicopterController.transform.position, helicopterController.Destination) < 0.1f)
+            {
+                // If the helicopter is at or very close to the destination, set a new random destination
+                helicopterController.SetDestination(RandomGridPosition());
+            }
         }
     }
  
@@ -279,6 +288,26 @@ IEnumerator GetAgentsData()
         }
         }
     }
+
+    Vector3 RandomGridPosition()
+{
+    // Define the boundaries of the grid
+    float minX = 0f;  // Minimum X coordinate
+    float maxX = 24f; // Maximum X coordinate
+    float minY = 10f;  // Minimum Y coordinate (if you want varying heights)
+    float maxY = 10f; // Maximum Y coordinate (for different heights)
+    float minZ = 0f;  // Minimum Z coordinate
+    float maxZ = 24f; // Maximum Z coordinate
+
+    // Generate random x, y, and z coordinates within the grid boundaries
+    float randomX = UnityEngine.Random.Range(minX, maxX);
+    float randomY = UnityEngine.Random.Range(minY, maxY);
+    float randomZ = UnityEngine.Random.Range(minZ, maxZ);
+
+    // Return the new random position
+    return new Vector3(randomX, randomY, randomZ);
+}
+
 
 
    void RemoveArrivedAgents()
