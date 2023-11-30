@@ -1,3 +1,4 @@
+#Emilia Salazar e Ian Holender
 from mesa import Agent
 import networkx as nx
 import numpy as np
@@ -23,19 +24,7 @@ class Car(Agent):
         self.threshold = random.uniform(0, 5)
         
 
-
-
-    def plot_graph(self, graph):
-        pos = {node: (node[0], -node[1]) for node in graph.nodes}  # Flip y-axis for visualization
-        nx.draw(graph, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=8, font_color='black')
-        
-        # Add edge labels to display weights
-        edge_labels = nx.get_edge_attributes(graph, 'weight')
-        nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, font_color='red')
-
-        plt.show()
-
-
+    #Esta función se utiliza para asignar el símbolo a la dirección de la calle para poder hacer nuestro grafo correctamente
     def determine_node_type(self, cell_contents):
         node_type = ' '  
 
@@ -64,9 +53,12 @@ class Car(Agent):
 
         return node_type
     
+    #Esta función regresa si unas coordenadas están dentro del rango de el grid
     def is_within_bounds(x, y, width, height):
         return 0 <= x < width and 0 <= y < height
     
+
+    #Esta función crea el grafo manualmente. Dependiendo de la dirección de la calle o el símbolo, los nodos pueden estar dirigidos a otros nodos. Se dirigen las diagonales y los lados. Igualmente se agrega el peso, para las diagonales 2 y para los lados 1
     def create_graph(self):
         grid = self.model.grid
 
@@ -300,6 +292,7 @@ class Car(Agent):
         adjacency_matrix = nx.adjacency_matrix(G).todense()
         print(adjacency_matrix)
 
+    #Esta función encuentra el camino más corto utilizando A* y el grafo dirigido, dependiendo un punto de inicio y un punto de fin
     def find_path(self, start, end):
         G = self.graph
         start_node_type = self.determine_node_type(self.model.grid.get_cell_list_contents([start]))
@@ -319,14 +312,12 @@ class Car(Agent):
             print("No path found in the graph.")
             return []
 
+    #Esta función calcula la heurística para A* que en este caso es la distancia euclidiana
     def heuristic(self, a, b):
-        # Simple Euclidean distance
         return ((a[0] - b[0])**2 + (a[1] - b[1])**2)**0.5
     
+    #Esta función determine si un coche se puede mover a una celda. Regresa falso si no se puede mover porque hay un semáforo en rojo o hay un coche en esa celda, y regresa verdadero si si se puede mover. 
     def can_move_to(self, next_position):
-        """
-        Checks if the car can move to the next position. Returns True if it can, False otherwise.
-        """
         cell_contents = self.model.grid.get_cell_list_contents(next_position)
         for agent in cell_contents:
             if isinstance(agent, Traffic_Light) and not agent.state:
@@ -337,17 +328,16 @@ class Car(Agent):
 
         return True
 
+    #Esta función compara la pocisión del coche con la del destino, si son la misma, quita a el agente de la simulación
     def arrived_at_destination(self):
         if self.pos == self.destination_pos:
             self.model.grid.remove_agent(self)
             self.model.schedule.remove(self)
             self.model.CarsReached += 1
             return True
-        
+
+    #Esta función regresa la dirección de un agente de calle en específico 
     def get_current_road_direction(self):
-        """
-        Returns the direction of the Road agent on which the car is currently located.
-        """
         current_cell_contents = self.model.grid.get_cell_list_contents(self.pos)
         for agent in current_cell_contents:
             if isinstance(agent, Road):
@@ -355,16 +345,12 @@ class Car(Agent):
         return None 
     
     def is_within_bounds(self, position):
-        """
-        Checks if the given position is within the bounds of the grid.
-        """
         x, y = position
         return 0 <= x < self.model.grid.width and 0 <= y < self.model.grid.height
     
+
+    #Esta función determina si un agente se puede mover diagonalmente. Lo que hace es, dependiendo la la dirección de la celda, si a lado no hay coche y en la diagonal no hay coche, se puede mover. Calcula que las diagonales sean nodos y estén dentro de el grid.
     def can_move_diagonally(self):
-        """
-        Checks if the car can move diagonally based on its current direction.
-        """
         current_x, current_y = self.pos
         direction = self.get_current_road_direction()
         diagonal_pos1 = None
@@ -405,11 +391,8 @@ class Car(Agent):
         return False
     
 
-    
+    #Esta función regresa cuáles son las posibles diagonales a las que se puede mover un coche
     def get_diagonal_positions(self):
-        """
-        Returns a list of possible diagonal positions based on the current direction.
-        """
         current_x, current_y = self.pos
         direction = self.get_current_road_direction()
         diagonal_positions = []
@@ -429,7 +412,8 @@ class Car(Agent):
 
         return diagonal_positions
     
-    def three_cars_ahead(self):
+    #Esta función, dependiendo la dirección del coche ve dos pocisiones adelante. Si es que encuentra en las tres pocisiones un agente coche al mismo tiempo, regresa verdadero. 
+    def two_cars_ahead(self):
         current_x, current_y = self.pos
         direction = self.get_current_road_direction()
         positions_to_check = []
@@ -454,6 +438,8 @@ class Car(Agent):
         print(f"Car {self.unique_id} detected {car_count} cars ahead.")
         return car_count == 2 
     
+
+    #Esta función, dependiendo de la dirección de la calle, busca los nodos que debe actualizar y les suma el peso. Estos nodos en el caso de la simulación son las pocisiones de los dos coches en frente, esto es para que si es necesario recalcular A*, lo haga sin volver al camino anterior
     def update_graph_weights_due_to_congestion(self):
         current_x, current_y = self.pos
         direction = self.get_current_road_direction()
@@ -475,6 +461,7 @@ class Car(Agent):
                         self.graph[neighbor][position]['weight'] += 30
 
     
+    #Esta función, dependiendo de la dirección de la calle, regresa si es que hay un coche a lado del agente
     def get_adjacent_cars(self):
         direction = self.get_current_road_direction()
         current_x, current_y = self.pos
@@ -500,12 +487,13 @@ class Car(Agent):
         return adjacent_cars
 
     
-
+    #Esta pocisión regresa el siguiente movimiento planeado de un agente
     def get_next_move(self):
         if self.path and len(self.path) > 0:
             return self.path[0]
         return None
     
+    #Esta función regresa la posible siguiente diagonal de un agente
     def get_next_diagonal_move(self):
         direction = self.get_current_road_direction()
         current_x, current_y = self.pos
@@ -520,6 +508,7 @@ class Car(Agent):
 
         return []
     
+    #Esta funcipon regresa la pocisión de enfrente de un agente
     def get_next_front_move(self):
         direction = self.get_current_road_direction()
         current_x, current_y = self.pos
@@ -535,7 +524,7 @@ class Car(Agent):
 
         return None
     
-    
+    #Esta función regresa si es que un agente a lado de mi planea moverse a mi diagoal y yo planeo moverme a su diagonal
     def is_diagonal_intersection(self, adjacent_car):
         my_next_diagonal_moves = self.get_next_diagonal_move() or []
         their_next_diagonal_moves = adjacent_car.get_next_diagonal_move() or []
@@ -552,6 +541,7 @@ class Car(Agent):
 
     
     def move(self):
+        #Si estas en una congestión de tráfico y haz estado parado durante 11 pasos, tomas cualquier celda vacía que tu nodo esté direccionado a ella y recalculas A*, esto es para liberar las congestiones de tráfico.
         if self.stationary_steps >= 11:
             for neighbor in self.graph.neighbors(self.pos):
                 if (self.can_move_to(neighbor) and
@@ -559,21 +549,38 @@ class Car(Agent):
                     self.graph.has_edge(self.pos, neighbor)):
                     self.model.grid.move_agent(self, neighbor)
                     self.path = self.find_path(neighbor, self.destination_pos)
-                    self.stationary_steps = 0  # Reset stationary steps
+                    self.stationary_steps = 0  
                     return
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
 
         if self.path and len(self.path) > 0:
             next_position = self.path[0]
-            if self.can_move_to(next_position) and not self.three_cars_ahead():
+            #Si te puedes mover y no tienes dos coches en frente, buscas si tienes un coche a lado. Si si lo tienes y van a tener una intersección de diagonales, buscas si tu threshold que es un número random del 1 al 5 inicializado al principio es menor que el del otro agente. Si es menor te esperas a que el se mueva, si es mayor tú te mueves. Si tienen el mismo threshold el que se inicializó primero avanza primero. Esto es para que los agentes no se crucen entre ellos
+            if self.can_move_to(next_position) and not self.two_cars_ahead():
+                adjacent_cars = self.get_adjacent_cars()
+                for adjacent_car in adjacent_cars:
+                    if self.is_diagonal_intersection(adjacent_car):
+                        if self.threshold < adjacent_car.threshold:
+                            return  
+                        elif self.threshold == adjacent_car.threshold:
+                            if self.unique_id < adjacent_car.unique_id:
+                                self.model.grid.move_agent(self, next_position)
+                                self.path.pop(0)
+                                return 
+                            else:
+                                self.stationary_steps += 1
+                                self.path = self.find_path(self.pos, self.destination_pos)
+                                return 
+                #Si no tienes un agente a lado con el que vas a tener una intersección diagonal, avanzas normalmente
                 self.model.grid.move_agent(self, next_position)
                 self.path.pop(0)
-                self.stationary_steps = 0  # Reset stationary steps as the car moved
+                self.stationary_steps = 0  
  
             else:
                 self.stationary_steps += 1
-                if self.three_cars_ahead():
+                #Si tienes dos coches a delante, buscas moverte a una diagonal que sea un nodo dentro del grafo y estés conectado a esa diagonal, esto es para evitar que la diagonal sea en sentido contrario o a un nodo no dirigido. Si es que si te puedes mover a la diagonal, actualizas los pesos del grafo agregando 30 puntos a los nodos de las dos pocisiones en frente de ti y después te mueves a la diagonal. una vez en la diagonal recalculas A*
+                if self.two_cars_ahead():
                     print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
                     diagonal_positions = self.get_diagonal_positions()
                     for diag_pos in diagonal_positions:
@@ -591,62 +598,7 @@ class Car(Agent):
 
 
 
-
-
-    # def move(self):
-    #     """
-    #     Moves the car along the path determined by A*.
-    #     Recalculates the path if blocked and moves diagonally if necessary.
-    #     """
-        
-    #     if self.path is None or len(self.path) == 0:
-    #         self.path = self.find_path(self.pos, self.destination_pos)        
-    #     if self.path and len(self.path) > 0:
-    #         next_position = self.path[0]  # Get the next position
-    #         if self.can_move_to(next_position) and not self.three_cars_ahead():
-    #             self.model.grid.move_agent(self, next_position)
-    #             self.path.pop(0) 
-                
-    #         else:
-    #             self.stationary_steps += 1  
-    #             if self.three_cars_ahead():
-    #                 print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
-    #                 diagonal_positions = self.get_diagonal_positions()
-    #                 for diag_pos in diagonal_positions:
-    #                     if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos):
-    #                         self.update_graph_weights_due_to_congestion()
-    #                         self.model.grid.move_agent(self, diag_pos)
-    #                         print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
-    #                         print("PATH BEFORE", self.path)  
-    #                         self.path = self.find_path(diag_pos, self.destination_pos)
-    #                         print("PATH AFTER", self.path)
-    #                         self.stationary_steps = 0  
-    #                         break
-    #                     else:
-    #                         print(f"Diagonal move to {diag_pos} not possible for Car {self.unique_id}.")
-    #                         self.path = self.find_path(self.pos, self.destination_pos)
-    #                         if not self.path:
-    #                             print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
-    #                         self.stationary_steps = 0   
-
-    # adjacent_cars = self.get_adjacent_cars()
-                # for adjacent_car in adjacent_cars:
-                #     if self.is_diagonal_intersection(adjacent_car):
-                #         if self.threshold < adjacent_car.threshold:
-                #             return  
-                #         elif self.threshold == adjacent_car.threshold:
-                #             if self.unique_id < adjacent_car.unique_id:
-                #                 self.model.grid.move_agent(self, next_position)
-                #                 self.path.pop(0)
-                #                 return 
-                #             else:
-                #                 self.stationary_steps += 1
-                #                 self.path = self.find_path(self.pos, self.destination_pos)
-                #                 return  
-
-
-
-
+    #Aquí te mueves 
     def step(self):
         """
         Determines the new path using A* and moves along it.
@@ -676,6 +628,7 @@ class Traffic_Light(Agent):
         self.timeToChange = timeToChange
         self.traffic_light_states = {'S': False, 's': True}
 
+    #Dependiendo de tu símbolo de semáforo, si uno es verdadero el otro es falso y viceversa
     def toggle_traffic_lights(self, light_type):
         previous_state = self.traffic_light_states[light_type]
         if light_type == 'S':
@@ -688,6 +641,7 @@ class Traffic_Light(Agent):
        
 
     def step(self):
+        #Cambia cada tiempo determinado
         if self.model.schedule.steps % self.timeToChange == 0:
             self.toggle_traffic_lights(self.light_type)
             self.state = self.traffic_light_states[self.light_type]

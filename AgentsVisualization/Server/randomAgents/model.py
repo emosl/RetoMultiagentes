@@ -1,3 +1,4 @@
+#Emilia Salazar e Ian Holender
 from mesa import Model
 import random
 from mesa.time import RandomActivation
@@ -37,7 +38,7 @@ class CityModel(Model):
             self.CarsReached = 0
         
 
-
+            #Esta parte inicializa los agentes dependiendo su respectivo símbolo dentro del mapa
             for r, row in enumerate(lines):
                 for c, col in enumerate(row):
                     if col in ["v", "^", ">", "<"]:
@@ -74,8 +75,8 @@ class CityModel(Model):
         self.num_agents = 0
         self.running = True
         self.step_count = 0
-        self.initialize_car()
         
+    #Esta función calcula si hay 367 coches dentro de la simulación que es el máximo número de coches que puede haber  
     def is_grid_filled(self):
         car_count = 0
 
@@ -86,41 +87,21 @@ class CityModel(Model):
 
         return car_count == 367
 
-            
+    #Esta función checa si una celda esta ocupada por un coche   
     def is_cell_occupied(self, pos):
-        """
-        Check if a given cell in the grid is occupied by a Car.
-        """
         this_cell = self.grid.get_cell_list_contents(pos)
         return any(isinstance(agent, Car) for agent in this_cell)
 
-        
-
-
-    def initialize_car(self):
-        if self.I_locations and self.D_locations:
-            available_I_locations = [loc for loc in self.I_locations if not self.is_cell_occupied(loc)]
-            if available_I_locations:
-                random_I_location = random.choice(available_I_locations)
-                random_D_location = random.choice(self.D_locations)
-                car_agent = Car(1000 + self.num_agents, self, random_D_location)  
-                self.grid.place_agent(car_agent, random_I_location)
-                self.schedule.add(car_agent)
-                self.num_agents += 1
-            else:
-                print("No available initialization locations.")
-            
-
-
-
+    #Esta función se utiliza para inicializar los coches, checa si la pocisión de inicialización esta ocupada por un coche, si no lo está. le asigna un punto de inicialización y de destino random a un coche y lo pone dentro del grid, al igual que para parar la simulación si ya no caben más coches
     def step(self):
         '''Advance the model by one step.'''
         self.schedule.step()
         self.step_count += 1  
         ("STEP MODEL", self.step_count)
         print("NUMBER OF AGENTS: ", self.num_agents)
+        print("AGENTS REACHED: " , self.CarsReached)
         
-        if self.step_count % 3 == 0:
+        if self.step_count % 5 == 0 or self.step_count == 1:
             for i in range(min(4, len(self.I_locations))):
                 available_I_locations = [loc for loc in self.I_locations if not self.is_cell_occupied(loc)]
                 if available_I_locations:
@@ -137,31 +118,38 @@ class CityModel(Model):
             self.running = False
             print("Simulation stopped: Grid is filled.")
             return
+        
+        
 
             
 
-        if(self.schedule.steps%100 == 0):
-            ##mandar coches al api
+        # if(self.schedule.steps%100 == 0):
+        #     ##mandar coches al api
 
-            url = "http://52.1.3.19:8585/api/"
-            endpoint = "validate_attempt"
+        #     url = "http://52.1.3.19:8585/api/"
+        #     endpoint = "attempts"
 
 
-            data = {
-                "year" : 2023,
-                "classroom" : 302,
-                "name" : "Equipo 6",
-                "num_cars": self.CarsReached
-            }
+        #     data = {
+        #         "year" : 2023,
+        #         "classroom" : 302,
+        #         "name" : "Equipo Emo y Yan",
+        #         "num_cars": self.CarsReached
+        #     }
 
-            headers = {
-                "Content-Type": "application/json"
-            }
+        #     headers = {
+        #         "Content-Type": "application/json"
+        #     }
 
-            response = requests.post(url+endpoint, data=json.dumps(data), headers=headers)
-            print("Request " + "successful" if response.status_code == 200 else "failed", "Status code:", response.status_code)
-            # print("Response:", response.text())
-            print("mandar coches")
-            # if self.shedule.steps % 100== 0:
-            #     ##Mandar los coches al api
-            #     print("mandar coches")
+        #     response = requests.post(url+endpoint, data=json.dumps(data), headers=headers)
+        #     print("Request " + "successful" if response.status_code == 200 else "failed", "Status code:", response.status_code)
+        #     # print("Response:", response.text())
+        #     print("mandar coches")
+        #     # if self.shedule.steps % 100== 0:
+        #     #     ##Mandar los coches al api
+        #     #     print("mandar coches")
+
+        #     if self.step_count == 1000:
+        #         self.running = False
+        #         print("Simulation stopped: 1000 reached")
+        #         return

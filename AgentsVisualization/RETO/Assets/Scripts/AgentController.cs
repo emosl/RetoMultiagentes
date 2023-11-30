@@ -12,15 +12,6 @@ using UnityEngine.Networking;
 [Serializable]
 public class AgentData
 {
-    /*
-    The AgentData class is used to store the data of each agent.
-    
-    Attributes:
-        id (string): The id of the agent.
-        x (float): The x coordinate of the agent.
-        y (float): The y coordinate of the agent.
-        z (float): The z coordinate of the agent.
-    */
     public string id;
     public float x, y, z;
     public bool hasArrived;
@@ -182,13 +173,8 @@ public class AgentController : MonoBehaviour
 {
     if (cameras.Count > 0)
     {
-        // Deactivate the current camera
         cameras[currentCameraIndex].SetActive(false);
-
-        // Move to the next camera index
         currentCameraIndex = (currentCameraIndex + 1) % cameras.Count;
-
-        // Activate the new current camera
         cameras[currentCameraIndex].SetActive(true);
     }
 }
@@ -217,8 +203,6 @@ public class AgentController : MonoBehaviour
         WWWForm form = new WWWForm();
         Debug.Log("Sending NAgents: " + NAgents);
         form.AddField("NAgents", NAgents.ToString());
-        // form.AddField("width", width.ToString());
-        // form.AddField("height", height.ToString());
 
         UnityWebRequest www = UnityWebRequest.Post(serverUrl + sendConfigEndpoint, form);
         www.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -234,7 +218,7 @@ public class AgentController : MonoBehaviour
             Debug.Log("Configuration upload complete!");
             Debug.Log("Getting Agents positions");
 
-            // Once the configuration has been sent, it launches a coroutine to get the agents data.
+        
             StartCoroutine(GetAgentsData());
             StartCoroutine(GetTrafficLightsData());
         }
@@ -264,8 +248,7 @@ IEnumerator GetAgentsData()
         Vector3 initialPos = new Vector3(0,0,0);
         if (!agents.ContainsKey(agent.id))
         {
-            // Instantiate new agent if it doesn't exist
-            // GameObject newAgent = Instantiate(agentPrefab, initialPos, Quaternion.identity);
+
             GameObject selectedCarPrefab = carPrefabs[UnityEngine.Random.Range(0, carPrefabs.Length)];
             GameObject newAgent = Instantiate(selectedCarPrefab, initialPos, Quaternion.identity);
             agents[agent.id] = newAgent;
@@ -277,7 +260,7 @@ IEnumerator GetAgentsData()
         }
         else
         {
-            // Update position of existing agent
+
             ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
             applyTransforms.getPosition(newAgentPosition);
         }
@@ -316,32 +299,32 @@ IEnumerator GetAgentsData()
                 trafficLightObjects[trafficLight.id] = lightObj;
             }
 
-            // Update the state of the traffic light
+
             Light greenLight = lightObj.transform.Find("green_light").GetComponent<Light>();
             Light redLight = lightObj.transform.Find("red_light").GetComponent<Light>();
 
-            greenLight.enabled = trafficLight.state;  // Green light on if state is true
-            redLight.enabled = !trafficLight.state;   // Red light on if state is false
+            greenLight.enabled = trafficLight.state;  
+            redLight.enabled = !trafficLight.state;   
         }
         }
     }
 
     Vector3 RandomGridPosition()
 {
-    // Define the boundaries of the grid
-    float minX = 0f;  // Minimum X coordinate
-    float maxX = 24f; // Maximum X coordinate
-    float minY = 10f;  // Minimum Y coordinate (if you want varying heights)
-    float maxY = 10f; // Maximum Y coordinate (for different heights)
-    float minZ = 0f;  // Minimum Z coordinate
-    float maxZ = 24f; // Maximum Z coordinate
 
-    // Generate random x, y, and z coordinates within the grid boundaries
+    float minX = 0f;  
+    float maxX = 24f; 
+    float minY = 8f;  
+    float maxY = 10f; 
+    float minZ = 0f;  
+    float maxZ = 24f; 
+
+
     float randomX = UnityEngine.Random.Range(minX, maxX);
     float randomY = UnityEngine.Random.Range(minY, maxY);
     float randomZ = UnityEngine.Random.Range(minZ, maxZ);
 
-    // Return the new random position
+
     return new Vector3(randomX, randomY, randomZ);
 }
 
@@ -350,20 +333,20 @@ IEnumerator GetAgentsData()
    void RemoveArrivedAgents()
 {
     List<string> agentsToRemove = new List<string>();
-    Debug.Log($"Agents count before removal: {agents.Count}");
 
 
-    // Check which agents have arrived and need to be removed
+
+
     foreach (var agentData in agentsData.positions)
     {
         if (agentData.hasArrived)
         {
-            Debug.Log($"Agent ID {agentData.id} marked for removal");
+
             agentsToRemove.Add(agentData.id);
         }
     }
 
-    // Remove the agents from the dictionary and scene
+
     foreach (var agentId in agentsToRemove)
     {
         if (agents.TryGetValue(agentId, out GameObject agentObj))
@@ -372,7 +355,7 @@ IEnumerator GetAgentsData()
 
             try
             {
-                // Try to destroy the agent and catch any potential exceptions
+                
                 Destroy(agentObj);
                 Debug.Log($"Agent ID: {agentId} destroyed successfully.");
             }
@@ -386,7 +369,7 @@ IEnumerator GetAgentsData()
             currPositions.Remove(agentId);
         }
     }
-    Debug.Log($"Agents count after removal: {agents.Count}");
+
 
 }
 }
