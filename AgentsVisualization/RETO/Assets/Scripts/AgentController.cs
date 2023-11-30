@@ -119,6 +119,8 @@ public class AgentController : MonoBehaviour
 
         GameObject helicopterObj = Instantiate(helicopterPrefab, RandomGridPosition(), Quaternion.identity);
         helicopterController = helicopterObj.GetComponent<HelicopterController>();
+        helicopterController.SetDestination(RandomGridPosition());
+
 
         timer = timeToUpdate;
 

@@ -333,6 +333,7 @@ class Car(Agent):
         if self.pos == self.destination_pos:
             self.model.grid.remove_agent(self)
             self.model.schedule.remove(self)
+            self.model.CarsReached += 1
             return True
         
     def get_current_road_direction(self):

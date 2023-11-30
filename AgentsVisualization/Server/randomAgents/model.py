@@ -4,6 +4,8 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from randomAgents.agent import *
 import json
+import requests
+
 
 
 class CityModel(Model):
@@ -32,6 +34,7 @@ class CityModel(Model):
             self.schedule = RandomActivation(self)
             self.I_locations = []
             self.D_locations = []
+            self.CarsReached = 0
         
 
 
@@ -105,3 +108,31 @@ class CityModel(Model):
                     self.grid.place_agent(car_agent, I_location)
                     self.schedule.add(car_agent)
                     self.num_agents += 1
+
+            
+            self.schedule.step()
+            if(self.schedule.steps%100 == 0):
+                ##mandar coches al api
+
+                url = "http://52.1.3.19:8585/api/"
+                endpoint = "validate_attempt"
+
+
+                data = {
+                    "year" : 2023,
+                    "classroom" : 302,
+                    "name" : "Equipo 6",
+                    "num_cars": self.CarsReached
+                }
+
+                headers = {
+                    "Content-Type": "application/json"
+                }
+
+                response = requests.post(url+endpoint, data=json.dumps(data), headers=headers)
+                print("Request " + "successful" if response.status_code == 200 else "failed", "Status code:", response.status_code)
+                # print("Response:", response.text())
+                print("mandar coches")
+                # if self.shedule.steps % 100== 0:
+                #     ##Mandar los coches al api
+                #     print("mandar coches")
