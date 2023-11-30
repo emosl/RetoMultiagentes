@@ -348,6 +348,7 @@ MonoBehaviour:
   - {fileID: 8202600753467251666, guid: ede5217890f9347a0949d4bd5da424d8, type: 3}
   - {fileID: 4108870557919854909, guid: 9b53eb33582e94b769d6a60b30bf8203, type: 3}
   - {fileID: 8621662365434536952, guid: 83c78811edb644f278524d617330eaa7, type: 3}
+  helicopterPrefab: {fileID: 100006, guid: ebfa405660e25c549bb7039f0b44f8ff, type: 3}
 --- !u!4 &819278455
 Transform:
   m_ObjectHideFlags: 0
