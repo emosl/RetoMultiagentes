@@ -17,12 +17,12 @@ class CityModel(Model):
     """
     def __init__(self, number_agents):
 
-       
+
         dataDictionary = json.load(open("city_files/mapDictionary.json"))
 
         self.traffic_lights = []
 
-       
+
         with open('city_files/2023_base.txt') as baseFile:
             lines = baseFile.readlines()
             self.width = len(lines[0])-1
@@ -76,19 +76,39 @@ class CityModel(Model):
         self.step_count = 0
         self.initialize_car()
         
-        
+    def is_grid_filled(self):
+        car_count = 0
+
+        for contents in self.grid.coord_iter():
+            cell_contents = contents[0]
+            if any(isinstance(agent, Car) for agent in cell_contents):
+                car_count += 1
+
+        return car_count == 367
+
+            
+    def is_cell_occupied(self, pos):
+        """
+        Check if a given cell in the grid is occupied by a Car.
+        """
+        this_cell = self.grid.get_cell_list_contents(pos)
+        return any(isinstance(agent, Car) for agent in this_cell)
 
         
 
 
     def initialize_car(self):
         if self.I_locations and self.D_locations:
-            random_I_location = random.choice(self.I_locations)
-            random_D_location = random.choice(self.D_locations)
-            car_agent = Car(1000 + self.num_agents, self, random_D_location)  
-            self.grid.place_agent(car_agent, random_I_location)
-            self.schedule.add(car_agent)
-            self.num_agents += 1
+            available_I_locations = [loc for loc in self.I_locations if not self.is_cell_occupied(loc)]
+            if available_I_locations:
+                random_I_location = random.choice(available_I_locations)
+                random_D_location = random.choice(self.D_locations)
+                car_agent = Car(1000 + self.num_agents, self, random_D_location)  
+                self.grid.place_agent(car_agent, random_I_location)
+                self.schedule.add(car_agent)
+                self.num_agents += 1
+            else:
+                print("No available initialization locations.")
             
 
 
@@ -100,15 +120,23 @@ class CityModel(Model):
         ("STEP MODEL", self.step_count)
         print("NUMBER OF AGENTS: ", self.num_agents)
         
-        if self.step_count % 5 == 0:
-            for i in range(4):
-                if self.I_locations:
-                    I_location = self.I_locations[i]
+        if self.step_count % 3 == 0:
+            for i in range(min(4, len(self.I_locations))):
+                available_I_locations = [loc for loc in self.I_locations if not self.is_cell_occupied(loc)]
+                if available_I_locations:
+                    I_location = random.choice(available_I_locations)
                     random_D_location = random.choice(self.D_locations)
                     car_agent = Car(1000 + self.num_agents, self, random_D_location)  
                     self.grid.place_agent(car_agent, I_location)
                     self.schedule.add(car_agent)
                     self.num_agents += 1
+                else:
+                    print("No available initialization locations for new cars.")
+
+        if self.is_grid_filled():
+            self.running = False
+            print("Simulation stopped: Grid is filled.")
+            return
 
             
 
