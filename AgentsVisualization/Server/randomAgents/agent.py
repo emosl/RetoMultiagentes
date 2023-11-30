@@ -465,14 +465,29 @@ class Car(Agent):
 
     
     def get_adjacent_cars(self):
-        adjacent_positions = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
+        direction = self.get_current_road_direction()
+        current_x, current_y = self.pos
+        adjacent_positions = []
+
+        if direction == "Right":
+            adjacent_positions = [(current_x, current_y - 1), (current_x, current_y + 1)]
+        elif direction == "Left":
+            adjacent_positions = [(current_x, current_y - 1), (current_x, current_y + 1)]
+        elif direction == "Up":
+            adjacent_positions = [(current_x - 1, current_y), (current_x + 1, current_y)]
+        elif direction == "Down":
+            adjacent_positions = [(current_x - 1, current_y), (current_x + 1, current_y)]
+
         adjacent_cars = []
         for position in adjacent_positions:
-            cell_contents = self.model.grid.get_cell_list_contents(position)
-            for agent in cell_contents:
-                if isinstance(agent, Car):
-                    adjacent_cars.append(agent)
+            if self.is_within_bounds(position):
+                cell_contents = self.model.grid.get_cell_list_contents(position)
+                for agent in cell_contents:
+                    if isinstance(agent, Car):
+                        adjacent_cars.append(agent)
+
         return adjacent_cars
+
     
 
     def get_next_move(self):
@@ -492,7 +507,7 @@ class Car(Agent):
         elif direction == "Down":
             return (current_x - 1, current_y - 1), (current_x + 1, current_y - 1)
 
-        return None
+        return []
     
     def get_next_front_move(self):
         direction = self.get_current_road_direction()
@@ -509,21 +524,21 @@ class Car(Agent):
 
         return None
     
+    
     def is_diagonal_intersection(self, adjacent_car):
-        my_next_diagonal_moves = self.get_next_diagonal_move()
-        their_next_front_move = adjacent_car.get_next_front_move()
-        my_next_front_move = self.get_next_front_move()
-        their_next_diagonal_moves = adjacent_car.get_next_diagonal_move()
+        my_next_diagonal_moves = self.get_next_diagonal_move() or []
+        their_next_diagonal_moves = adjacent_car.get_next_diagonal_move() or []
 
-        if my_next_diagonal_moves and their_next_front_move:
-            if their_next_front_move in my_next_diagonal_moves:
-                return True
+        my_current_front_position = self.get_next_front_move() or None
+        their_current_front_position = adjacent_car.get_next_front_move() or None
 
-        if their_next_diagonal_moves and my_next_front_move:
-            if my_next_front_move in their_next_diagonal_moves:
+        if my_current_front_position and their_current_front_position:
+            if my_current_front_position in their_next_diagonal_moves and their_current_front_position in my_next_diagonal_moves:
                 return True
 
         return False
+
+
     
     def move(self):
         if self.path is None or len(self.path) == 0:
@@ -538,9 +553,15 @@ class Car(Agent):
                     if self.is_diagonal_intersection(adjacent_car):
                         if self.threshold < adjacent_car.threshold:
                             return  
-                        if self.threshold == adjacent_car.threshold:
-                            if random.choice([True, False]):
-                                return
+                        elif self.threshold == adjacent_car.threshold:
+                            if self.unique_id < adjacent_car.unique_id:
+                                self.model.grid.move_agent(self, next_position)
+                                self.path.pop(0)
+                                return 
+                            else:
+                                self.stationary_steps += 1
+                                self.path = self.find_path(self.pos, self.destination_pos)
+                                return  
 
                 self.model.grid.move_agent(self, next_position)
                 self.path.pop(0)  
