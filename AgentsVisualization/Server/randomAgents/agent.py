@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import random
 
 
+
 class Car(Agent):
     """
     Agent that moves using the A* algorithm.
@@ -20,13 +21,20 @@ class Car(Agent):
         self.graph = self.create_graph()
         self.stationary_steps = 0
         self.threshold = random.uniform(0, 5)
+        
 
 
 
     def plot_graph(self, graph):
         pos = {node: (node[0], -node[1]) for node in graph.nodes}  # Flip y-axis for visualization
         nx.draw(graph, pos, with_labels=True, node_size=700, node_color='skyblue', font_size=8, font_color='black')
+        
+        # Add edge labels to display weights
+        edge_labels = nx.get_edge_attributes(graph, 'weight')
+        nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, font_color='red')
+
         plt.show()
+
 
     def determine_node_type(self, cell_contents):
         node_type = ' '  
@@ -396,6 +404,8 @@ class Car(Agent):
 
         return False
     
+
+    
     def get_diagonal_positions(self):
         """
         Returns a list of possible diagonal positions based on the current direction.
@@ -542,37 +552,32 @@ class Car(Agent):
 
     
     def move(self):
+        if self.stationary_steps >= 11:
+            for neighbor in self.graph.neighbors(self.pos):
+                if (self.can_move_to(neighbor) and
+                    self.is_within_bounds(neighbor) and
+                    self.graph.has_edge(self.pos, neighbor)):
+                    self.model.grid.move_agent(self, neighbor)
+                    self.path = self.find_path(neighbor, self.destination_pos)
+                    self.stationary_steps = 0  # Reset stationary steps
+                    return
         if self.path is None or len(self.path) == 0:
             self.path = self.find_path(self.pos, self.destination_pos)
 
         if self.path and len(self.path) > 0:
-            next_position = self.path[0]  
-
+            next_position = self.path[0]
             if self.can_move_to(next_position) and not self.three_cars_ahead():
-                adjacent_cars = self.get_adjacent_cars()
-                for adjacent_car in adjacent_cars:
-                    if self.is_diagonal_intersection(adjacent_car):
-                        if self.threshold < adjacent_car.threshold:
-                            return  
-                        elif self.threshold == adjacent_car.threshold:
-                            if self.unique_id < adjacent_car.unique_id:
-                                self.model.grid.move_agent(self, next_position)
-                                self.path.pop(0)
-                                return 
-                            else:
-                                self.stationary_steps += 1
-                                self.path = self.find_path(self.pos, self.destination_pos)
-                                return  
-
                 self.model.grid.move_agent(self, next_position)
-                self.path.pop(0)  
+                self.path.pop(0)
+                self.stationary_steps = 0  # Reset stationary steps as the car moved
+ 
             else:
                 self.stationary_steps += 1
                 if self.three_cars_ahead():
                     print(f"Car {self.unique_id} found 2 cars ahead, checking for diagonal move.")
                     diagonal_positions = self.get_diagonal_positions()
                     for diag_pos in diagonal_positions:
-                        if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos):
+                        if self.is_within_bounds(diag_pos) and self.can_move_diagonally() and self.can_move_to(diag_pos) and self.graph.has_node(diag_pos) and self.graph.has_edge(self.pos, diag_pos):
                             self.update_graph_weights_due_to_congestion()
                             self.model.grid.move_agent(self, diag_pos)
                             print(f"Car {self.unique_id} moved diagonally to {diag_pos}")
@@ -623,6 +628,22 @@ class Car(Agent):
     #                         if not self.path:
     #                             print(f"Car {self.unique_id} is unable to move and cannot find a new path.")
     #                         self.stationary_steps = 0   
+
+    # adjacent_cars = self.get_adjacent_cars()
+                # for adjacent_car in adjacent_cars:
+                #     if self.is_diagonal_intersection(adjacent_car):
+                #         if self.threshold < adjacent_car.threshold:
+                #             return  
+                #         elif self.threshold == adjacent_car.threshold:
+                #             if self.unique_id < adjacent_car.unique_id:
+                #                 self.model.grid.move_agent(self, next_position)
+                #                 self.path.pop(0)
+                #                 return 
+                #             else:
+                #                 self.stationary_steps += 1
+                #                 self.path = self.find_path(self.pos, self.destination_pos)
+                #                 return  
+
 
 
 

@@ -15,9 +15,9 @@ class Car(Agent):
         super().__init__(unique_id, model)
         self.destination_pos = destination_pos  # The destination position for the car  
         self.path = None  # This will store the path the car needs to follow
-        # G = self.create_graph()
+        G = self.create_graph()
 
-        # self.plot_graph(G)
+        self.plot_graph(G)
 
     def plot_graph(self, graph):
         pos = {node: (node[0], -node[1]) for node in graph.nodes}  # Flip y-axis for visualization
