@@ -93,6 +93,10 @@ public class AgentController : MonoBehaviour
     Dictionary<string, GameObject> agents;
     Dictionary<string, Vector3> prevPositions, currPositions;
     private Dictionary<string, GameObject> trafficLightObjects;
+    public List<GameObject> cameras; 
+    private int currentCameraIndex = 0;
+    private float cameraSwitchInterval = 6f;
+    private float cameraSwitchTimer = 0f;
 
     bool updated = false, started = false;
 
@@ -123,6 +127,16 @@ public class AgentController : MonoBehaviour
 
 
         timer = timeToUpdate;
+        foreach (GameObject camera in cameras)
+        {
+            camera.SetActive(false);
+        }
+
+        // Activate the first camera if the list is not empty
+        if (cameras.Count > 0)
+        {
+            cameras[0].SetActive(true);
+        }
 
         // Launches a couroutine to send the configuration to the server.
         StartCoroutine(SendConfiguration());
@@ -144,6 +158,12 @@ public class AgentController : MonoBehaviour
         {
             timer -= Time.deltaTime;
             dt = 1.0f - (timer / timeToUpdate);
+            cameraSwitchTimer += Time.deltaTime;
+            if (cameraSwitchTimer >= cameraSwitchInterval)
+            {
+                SwitchCamera();
+                cameraSwitchTimer = 0f; // Reset the timer
+            }
 
             // Iterates over the agents to update their positions.
             // The positions are interpolated between the previous and current positions.
@@ -157,6 +177,21 @@ public class AgentController : MonoBehaviour
             }
         }
     }
+
+    void SwitchCamera()
+{
+    if (cameras.Count > 0)
+    {
+        // Deactivate the current camera
+        cameras[currentCameraIndex].SetActive(false);
+
+        // Move to the next camera index
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.Count;
+
+        // Activate the new current camera
+        cameras[currentCameraIndex].SetActive(true);
+    }
+}
  
     IEnumerator UpdateSimulation()
     {

@@ -595,8 +595,7 @@ class Car(Agent):
     #     """
         
     #     if self.path is None or len(self.path) == 0:
-    #         self.path = self.find_path(self.pos, self.destination_pos)
-           
+    #         self.path = self.find_path(self.pos, self.destination_pos)        
     #     if self.path and len(self.path) > 0:
     #         next_position = self.path[0]  # Get the next position
     #         if self.can_move_to(next_position) and not self.three_cars_ahead():
