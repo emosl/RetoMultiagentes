@@ -9,42 +9,39 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
-[Serializable]
+[Serializable] // Asegura que la clase pueda ser serializada por Unity para almacenamiento y transferencia.
 public class AgentData
 {
-    public string id;
-    public float x, y, z;
-    public bool hasArrived;
-    public bool state;
-    
+    // Definición de campos públicos para almacenar los datos del agente.
+    public string id; // Identificador único del agente.
+    public float x, y, z; // Posición del agente en el espacio 3D.
+    public bool hasArrived; // Indica si el agente ha llegado a su destino.
+    public bool state; // Estado adicional del agente
 
-
+    // Constructor de la clase para inicializar un agente con datos específicos.
     public AgentData(string id, float x, float y, float z)
     {
-        this.id = id;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        
+        this.id = id; // Asigna el identificador.
+        this.x = x; // Asigna la posición en el eje X.
+        this.y = y; // Asigna la posición en el eje Y.
+        this.z = z; // Asigna la posición en el eje Z.
     }
 }
 
-
-[Serializable]
-
+[Serializable] // Asegura que la clase pueda ser serializada por Unity.
 public class AgentsData
 {
     /*
-    The AgentsData class is used to store the data of all the agents.
+    La clase AgentsData se utiliza para almacenar los datos de todos los agentes.
 
-    Attributes:
-        positions (list): A list of AgentData objects.
+    Atributos:
+        positions (list): Una lista de objetos AgentData.
     */
-    public List<AgentData> positions;
-    List<string> activeAgentIds = new List<string>();
+    public List<AgentData> positions; // Lista para almacenar los datos de varios agentes.
+    List<string> activeAgentIds = new List<string>(); // Lista para almacenar los identificadores de agentes activos.
 
+    // Constructor de la clase que inicializa la lista de posiciones de los agentes.
     public AgentsData() => this.positions = new List<AgentData>();
-    
 }
 
 public class AgentController : MonoBehaviour
@@ -75,102 +72,106 @@ public class AgentController : MonoBehaviour
         timer (float): The timer to update the simulation.
         dt (float): The delta time.
     */
-    string serverUrl = "http://localhost:8585";
-    string getAgentsEndpoint = "/getAgents";
-    string getTrafficLightEndpoint = "/getTrafficLights";
-    string sendConfigEndpoint = "/init";
-    string updateEndpoint = "/update";
-    AgentsData agentsData, trafficLights;
-    Dictionary<string, GameObject> agents;
-    Dictionary<string, Vector3> prevPositions, currPositions;
-    private Dictionary<string, GameObject> trafficLightObjects;
-    public List<GameObject> cameras; 
-    private int currentCameraIndex = 0;
-    private float cameraSwitchInterval = 6f;
-    private float cameraSwitchTimer = 0f;
+    // Definición de variables para la comunicación con el servidor.
+string serverUrl = "http://localhost:8585"; // URL del servidor Flask.
+string getAgentsEndpoint = "/getAgents"; // Endpoint para obtener datos de los agentes.
+string getTrafficLightEndpoint = "/getTrafficLights"; // Endpoint para obtener datos de los semáforos.
+string sendConfigEndpoint = "/init"; // Endpoint para enviar la configuración inicial.
+string updateEndpoint = "/update"; // Endpoint para actualizar la simulación.
 
-    bool updated = false, started = false;
+// Variables para almacenar datos de agentes y semáforos.
+AgentsData agentsData, trafficLights; 
+Dictionary<string, GameObject> agents; // Diccionario para mapear agentes a objetos de Unity.
+Dictionary<string, Vector3> prevPositions, currPositions; // Diccionarios para posiciones anteriores y actuales de agentes.
+private Dictionary<string, GameObject> trafficLightObjects; // Diccionario para los objetos de semáforos en Unity.
 
-    public GameObject trafficLightsPrefab; 
-    public float timeToUpdate = 1.0f;
-    private float timer, dt;
-    private int NAgents = 0;
-    public GameObject[] carPrefabs;
-    public GameObject helicopterPrefab;
-    private HelicopterController helicopterController;
+// Variables para la gestión de cámaras en Unity.
+public List<GameObject> cameras; 
+private int currentCameraIndex = 0; // Índice de la cámara actual.
+private float cameraSwitchInterval = 6f; // Intervalo para cambiar de cámara.
+private float cameraSwitchTimer = 0f; // Temporizador para el cambio de cámara.
 
+// Variables de control para la actualización de la simulación.
+bool updated = false, started = false;
 
+// Prefabs y variables relacionadas con la simulación.
+public GameObject trafficLightsPrefab; // Prefab para los semáforos.
+public float timeToUpdate = 1.0f; // Tiempo para la actualización de la simulación.
+private float timer, dt; // Temporizadores para controlar la actualización.
+private int NAgents = 0; // Número de agentes en la simulación.
+public GameObject[] carPrefabs; // Array de prefabs de coches.
+public GameObject helicopterPrefab; // Prefab de helicóptero.
+private HelicopterController helicopterController; // Controlador del helicóptero.
 
-    void Start()
-    {
-        agentsData = new AgentsData();
-        trafficLights = new AgentsData();
-
-        prevPositions = new Dictionary<string, Vector3>();
-        currPositions = new Dictionary<string, Vector3>();
-
-        agents = new Dictionary<string, GameObject>();
-        trafficLightObjects = new Dictionary<string, GameObject>();
-
-        GameObject helicopterObj = Instantiate(helicopterPrefab, RandomGridPosition(), Quaternion.identity);
-        helicopterController = helicopterObj.GetComponent<HelicopterController>();
-        helicopterController.SetDestination(RandomGridPosition());
-
-
-        timer = timeToUpdate;
-        foreach (GameObject camera in cameras)
-        {
-            camera.SetActive(false);
-        }
-
-        // Activate the first camera if the list is not empty
-        if (cameras.Count > 0)
-        {
-            cameras[0].SetActive(true);
-        }
-
-        // Launches a couroutine to send the configuration to the server.
-        StartCoroutine(SendConfiguration());
-        Debug.Log("Starting AgentController and sending configuration to server.");
-    }
-
-
-
-    private void Update() 
-    {
-        if(timer < 0)
-        {
-            timer = timeToUpdate;
-            updated = false;
-            StartCoroutine(UpdateSimulation());
-        }
-
-        if (updated)
-        {
-            timer -= Time.deltaTime;
-            dt = 1.0f - (timer / timeToUpdate);
-            cameraSwitchTimer += Time.deltaTime;
-            if (cameraSwitchTimer >= cameraSwitchInterval)
-            {
-                SwitchCamera();
-                cameraSwitchTimer = 0f; // Reset the timer
-            }
-
-            // Iterates over the agents to update their positions.
-            // The positions are interpolated between the previous and current positions.
-            RemoveArrivedAgents();
-            float t = (timer / timeToUpdate);
-            dt = t * t * ( 3f - 2f*t);
-            if (helicopterController != null && Vector3.Distance(helicopterController.transform.position, helicopterController.Destination) < 0.1f)
-            {
-                // If the helicopter is at or very close to the destination, set a new random destination
-                helicopterController.SetDestination(RandomGridPosition());
-            }
-        }
-    }
-
-    void SwitchCamera()
+void Start()
 {
+    // Inicialización de variables y estructuras de datos.
+    agentsData = new AgentsData();
+    trafficLights = new AgentsData();
+
+    prevPositions = new Dictionary<string, Vector3>();
+    currPositions = new Dictionary<string, Vector3>();
+
+    agents = new Dictionary<string, GameObject>();
+    trafficLightObjects = new Dictionary<string, GameObject>();
+
+    // Creación e inicialización del helicóptero.
+    GameObject helicopterObj = Instantiate(helicopterPrefab, RandomGridPosition(), Quaternion.identity);
+    helicopterController = helicopterObj.GetComponent<HelicopterController>();
+    helicopterController.SetDestination(RandomGridPosition());
+
+    // Configuración inicial de temporizadores y cámaras.
+    timer = timeToUpdate;
+    foreach (GameObject camera in cameras)
+    {
+        camera.SetActive(false);
+    }
+    if (cameras.Count > 0)
+    {
+        cameras[0].SetActive(true);
+    }
+
+    // Inicia la corutina para enviar la configuración al servidor.
+    StartCoroutine(SendConfiguration());
+    Debug.Log("Starting AgentController and sending configuration to server.");
+}
+
+private void Update() 
+{
+    // Controla la actualización regular de la simulación.
+    if(timer < 0)
+    {
+        timer = timeToUpdate;
+        updated = false;
+        StartCoroutine(UpdateSimulation());
+    }
+
+    // Realiza acciones si la simulación ha sido actualizada.
+    if (updated)
+    {
+        timer -= Time.deltaTime;
+        dt = 1.0f - (timer / timeToUpdate);
+        cameraSwitchTimer += Time.deltaTime;
+        if (cameraSwitchTimer >= cameraSwitchInterval)
+        {
+            SwitchCamera();
+            cameraSwitchTimer = 0f;
+        }
+
+        // Actualiza las posiciones de los agentes y controla el helicóptero. Borra las instancias de los agentes si ya llegaron a su destino
+        RemoveArrivedAgents();
+        float t = (timer / timeToUpdate);
+        dt = t * t * ( 3f - 2f*t);
+        if (helicopterController != null && Vector3.Distance(helicopterController.transform.position, helicopterController.Destination) < 0.1f)
+        {
+            helicopterController.SetDestination(RandomGridPosition());
+        }
+    }
+}
+
+void SwitchCamera()
+{
+    // Cambia la cámara activa en la lista de cámaras.
     if (cameras.Count > 0)
     {
         cameras[currentCameraIndex].SetActive(false);
@@ -178,184 +179,187 @@ public class AgentController : MonoBehaviour
         cameras[currentCameraIndex].SetActive(true);
     }
 }
- 
-    IEnumerator UpdateSimulation()
-    {
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + updateEndpoint);
-        yield return www.SendWebRequest();
- 
-        if (www.result != UnityWebRequest.Result.Success)
-            Debug.Log(www.error);
-        else 
-        {
-            StartCoroutine(GetAgentsData());
-            StartCoroutine(GetTrafficLightsData());
-        }
-    }
 
-    IEnumerator SendConfiguration()
-    {
-        /*
-        The SendConfiguration method is used to send the configuration to the server.
-
-        It uses a WWWForm to send the data to the server, and then it uses a UnityWebRequest to send the form.
-        */
-        WWWForm form = new WWWForm();
-        Debug.Log("Sending NAgents: " + NAgents);
-        form.AddField("NAgents", NAgents.ToString());
-
-        UnityWebRequest www = UnityWebRequest.Post(serverUrl + sendConfigEndpoint, form);
-        www.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-        yield return www.SendWebRequest();
-
-        if (www.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log(www.error);
-        }
-        else
-        {
-            Debug.Log("Configuration upload complete!");
-            Debug.Log("Getting Agents positions");
-
-        
-            StartCoroutine(GetAgentsData());
-            StartCoroutine(GetTrafficLightsData());
-        }
-    }
-
-IEnumerator GetAgentsData() 
+IEnumerator UpdateSimulation()
 {
-    
-    UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
+    // Corutina para actualizar la simulación mediante una solicitud al servidor.
+    UnityWebRequest www = UnityWebRequest.Get(serverUrl + updateEndpoint);
+    yield return www.SendWebRequest();
+
+    if (www.result != UnityWebRequest.Result.Success)
+        Debug.Log(www.error);
+    else 
+    {
+        StartCoroutine(GetAgentsData());
+        StartCoroutine(GetTrafficLightsData());
+    }
+}
+
+IEnumerator SendConfiguration()
+{
+    // Corutina para enviar la configuración inicial al servidor.
+    WWWForm form = new WWWForm();
+    Debug.Log("Sending NAgents: " + NAgents);
+    form.AddField("NAgents", NAgents.ToString());
+
+    UnityWebRequest www = UnityWebRequest.Post(serverUrl + sendConfigEndpoint, form);
+    www.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
     yield return www.SendWebRequest();
 
     if (www.result != UnityWebRequest.Result.Success)
     {
         Debug.Log(www.error);
     }
+    else
+    {
+        Debug.Log("Configuration upload complete!");
+        Debug.Log("Getting Agents positions");
+
+        StartCoroutine(GetAgentsData());
+        StartCoroutine(GetTrafficLightsData());
+    }
+}
+
+
+IEnumerator GetAgentsData() 
+{
+    // Envía una solicitud GET al servidor para obtener datos de los agentes.
+    UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
+    yield return www.SendWebRequest(); // Espera hasta que la solicitud esté completa.
+
+    if (www.result != UnityWebRequest.Result.Success)
+    {
+        // Si hay un error en la solicitud, lo muestra en el registro.
+        Debug.Log(www.error);
+    }
     else 
     {
+        // Si la solicitud es exitosa, procesa la respuesta.
         
+        // Deserializa los datos JSON recibidos en un objeto AgentsData.
         agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
-        string jsonResponse = www.downloadHandler.text;
+        string jsonResponse = www.downloadHandler.text; // Almacena la respuesta JSON como string.
+
+        // Itera sobre cada agente recibido en los datos.
         foreach(AgentData agent in agentsData.positions)
-    {
-        Debug.Log($"Agent ID: {agent.id}, Position: ({agent.x}, {agent.y}, {agent.z}), HasArrived: {agent.hasArrived}");
-        if (agent.hasArrived) continue;  
-
-        Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
-        Vector3 initialPos = new Vector3(0,0,0);
-        if (!agents.ContainsKey(agent.id))
         {
-
-            GameObject selectedCarPrefab = carPrefabs[UnityEngine.Random.Range(0, carPrefabs.Length)];
-            GameObject newAgent = Instantiate(selectedCarPrefab, initialPos, Quaternion.identity);
-            agents[agent.id] = newAgent;
-            ApplyTransforms applyTransforms = newAgent.GetComponentInChildren<ApplyTransforms>();
-            applyTransforms.getPosition(newAgentPosition);
-            applyTransforms.getPosition(newAgentPosition);
-            applyTransforms.setTime(timeToUpdate);
+            // Registra los datos del agente, como ID y posición.
+            Debug.Log($"Agent ID: {agent.id}, Position: ({agent.x}, {agent.y}, {agent.z}), HasArrived: {agent.hasArrived}");
             
+            if (agent.hasArrived) continue;  // Si el agente ha llegado a su destino, lo ignora.
+
+            // Convierte las coordenadas del agente en un Vector3.
+            Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+            Vector3 initialPos = new Vector3(0,0,0); // Posición inicial por defecto.
+
+            if (!agents.ContainsKey(agent.id))
+            {
+                // Si el agente no existe en el diccionario, lo crea y lo añade.
+
+                // Selecciona un prefab de coche al azar y lo instancia.
+                GameObject selectedCarPrefab = carPrefabs[UnityEngine.Random.Range(0, carPrefabs.Length)];
+                GameObject newAgent = Instantiate(selectedCarPrefab, initialPos, Quaternion.identity);
+                agents[agent.id] = newAgent;
+
+                // Obtiene y configura el script ApplyTransforms del agente.
+                ApplyTransforms applyTransforms = newAgent.GetComponentInChildren<ApplyTransforms>();
+                applyTransforms.getPosition(newAgentPosition); // Establece la posición del agente.
+                applyTransforms.getPosition(newAgentPosition);
+                applyTransforms.setTime(timeToUpdate); // Establece el tiempo de actualización.
+            }
+            else
+            {
+                // Si el agente ya existe, actualiza su posición.
+
+                ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
+                applyTransforms.getPosition(newAgentPosition); // Actualiza la posición del agente.
+            }
         }
-        else
-        {
 
-            ApplyTransforms applyTransforms = agents[agent.id].GetComponentInChildren<ApplyTransforms>();
-            applyTransforms.getPosition(newAgentPosition);
-        }
-
-        
-    }
-
-
-        updated = true;
-        if(!started) started = true;
+        updated = true; // Indica que los datos de los agentes han sido actualizados.
+        if(!started) started = true; // Marca que la simulación ha comenzado si aún no había empezado.
     }
 }
 
 
 
     IEnumerator GetTrafficLightsData() 
+{
+    // Realiza una solicitud GET para obtener datos de los semáforos.
+    UnityWebRequest www = UnityWebRequest.Get(serverUrl + getTrafficLightEndpoint);
+    yield return www.SendWebRequest(); // Espera hasta que la solicitud esté completa.
+
+    if (www.result != UnityWebRequest.Result.Success)
     {
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getTrafficLightEndpoint);
-        yield return www.SendWebRequest();
- 
-        if (www.result != UnityWebRequest.Result.Success)
-            Debug.Log(www.error);
-        else 
-        {
-            trafficLights = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+        // Si hay un error en la solicitud, muestra un mensaje de error.
+        Debug.Log(www.error);
+    }
+    else 
+    {
+        // Si la solicitud es exitosa, procesa los datos recibidos.
+        
+        // Deserializa los datos JSON recibidos en un objeto AgentsData.
+        trafficLights = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
 
-            Debug.Log(trafficLights.positions);
-
-            foreach(AgentData trafficLight in trafficLights.positions)
+        // Itera sobre cada semáforo recibido en los datos.
+        foreach(AgentData trafficLight in trafficLights.positions)
         {
             GameObject lightObj = null;
+
+            // Verifica si el semáforo ya existe; si no, lo crea y lo añade.
             if (!trafficLightObjects.TryGetValue(trafficLight.id, out lightObj))
             {
-                // Instantiate and store the traffic light object if it doesn't exist
                 lightObj = Instantiate(trafficLightsPrefab, new Vector3(trafficLight.x, trafficLight.y, trafficLight.z), Quaternion.identity);
                 trafficLightObjects[trafficLight.id] = lightObj;
             }
 
-
+            // Obtiene y actualiza los estados de las luces de cada semáforo.
             Light greenLight = lightObj.transform.Find("green_light").GetComponent<Light>();
             Light redLight = lightObj.transform.Find("red_light").GetComponent<Light>();
 
             greenLight.enabled = trafficLight.state;  
             redLight.enabled = !trafficLight.state;   
         }
-        }
     }
+}
 
-    Vector3 RandomGridPosition()
+Vector3 RandomGridPosition()
 {
-
-    float minX = 0f;  
-    float maxX = 24f; 
-    float minY = 8f;  
-    float maxY = 10f; 
-    float minZ = 0f;  
-    float maxZ = 24f; 
-
+    // Genera una posición aleatoria dentro de un rango especificado.
+    float minX = 0f, maxX = 24f; 
+    float minY = 8f, maxY = 10f; 
+    float minZ = 0f, maxZ = 24f; 
 
     float randomX = UnityEngine.Random.Range(minX, maxX);
     float randomY = UnityEngine.Random.Range(minY, maxY);
     float randomZ = UnityEngine.Random.Range(minZ, maxZ);
 
-
     return new Vector3(randomX, randomY, randomZ);
 }
 
-
-
-   void RemoveArrivedAgents()
+void RemoveArrivedAgents()
 {
+    // Identifica y elimina los agentes que han llegado a su destino.
     List<string> agentsToRemove = new List<string>();
 
-
-
-
+    // Recorre los agentes y agrega a la lista aquellos que han llegado.
     foreach (var agentData in agentsData.positions)
     {
         if (agentData.hasArrived)
         {
-
             agentsToRemove.Add(agentData.id);
         }
     }
 
-
+    // Elimina los agentes de la lista y de la simulación.
     foreach (var agentId in agentsToRemove)
     {
         if (agents.TryGetValue(agentId, out GameObject agentObj))
         {
             Debug.Log($"Attempting to remove agent ID: {agentId}");
-
             try
             {
-                
                 Destroy(agentObj);
                 Debug.Log($"Agent ID: {agentId} destroyed successfully.");
             }
@@ -369,7 +373,5 @@ IEnumerator GetAgentsData()
             currPositions.Remove(agentId);
         }
     }
-
-
 }
 }

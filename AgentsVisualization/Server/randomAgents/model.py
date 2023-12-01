@@ -101,7 +101,7 @@ class CityModel(Model):
         print("NUMBER OF AGENTS: ", self.num_agents)
         print("AGENTS REACHED: " , self.CarsReached)
         
-        if self.step_count % 5 == 0 or self.step_count == 1:
+        if self.step_count % 4 == 0 or self.step_count == 1:
             for i in range(min(4, len(self.I_locations))):
                 available_I_locations = [loc for loc in self.I_locations if not self.is_cell_occupied(loc)]
                 if available_I_locations:

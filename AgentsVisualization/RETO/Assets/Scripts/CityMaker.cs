@@ -73,9 +73,6 @@ public class CityMaker : MonoBehaviour
             tile = Instantiate(roadPrefab, position, Quaternion.identity);
             tile.transform.parent = transform;
 
-            // Debug log for the 'I' building
-            Debug.Log($"Building ('I') created at x: {x}, y: {y}, position: {position}");
-
             x += 1; 
             } else if (tiles[i] == '#') {
                 int rand= Random.Range(0,buildingPrefab.Length);
