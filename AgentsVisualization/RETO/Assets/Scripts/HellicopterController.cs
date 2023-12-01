@@ -4,16 +4,17 @@ using UnityEngine;
 
 public class HelicopterController : MonoBehaviour
 {
-    public float speed = 5.0f;
-    private Vector3 destination;
+    public float speed = 5.0f; // Velocidad de movimiento del helicóptero.
+    private Vector3 destination; // Destino al que se moverá el helicóptero.
 
-    // Public property to access the destination
+    // Propiedad pública para acceder al destino.
     public Vector3 Destination
     {
-        get { return destination; }
-        private set { destination = value; }
+        get { return destination; } // Obtener el valor actual del destino.
+        private set { destination = value; } // Asignar un nuevo destino.
     }
 
+    // Método público para establecer un nuevo destino.
     public void SetDestination(Vector3 newDestination)
     {
         Destination = newDestination;
@@ -21,19 +22,19 @@ public class HelicopterController : MonoBehaviour
 
     void Update()
     {
-        // Move towards the destination
-        if (Vector3.Distance(transform.position, Destination) > 0.1f)
+        // Moverse hacia el destino.
+        if (Vector3.Distance(transform.position, Destination) > 0.1f) // Comprobar si estamos cerca del destino.
         {
-            // Calculate the direction of movement
+            // Calcular la dirección hacia el destino.
             Vector3 direction = (Destination - transform.position).normalized;
 
-            // Create a rotation that looks along the direction of movement
+            // Crear una rotación que mire en la dirección del movimiento.
             Quaternion lookRotation = Quaternion.LookRotation(direction);
 
-            // Smoothly rotate the helicopter towards the look rotation
+            // Rotar suavemente el helicóptero hacia la rotación de destino.
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * speed);
 
-            // Move towards the destination
+            // Mover el helicóptero hacia el destino.
             transform.position = Vector3.MoveTowards(transform.position, Destination, speed * Time.deltaTime);
         }
     }
